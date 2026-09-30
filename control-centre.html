@@ -266,6 +266,17 @@ td.reason{color:var(--muted);white-space:normal;min-width:160px}
 .au .diff s{color:var(--faint)}
 
 /* members */
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--fg-2);cursor:pointer}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+.mem-act{display:flex;gap:8px;flex-wrap:wrap}
+.kick:hover,.kick.armed{border-color:var(--bad);color:var(--bad)}
+.addmem{border-style:dashed}
+.rcpts{display:flex;flex-wrap:wrap;gap:8px}
+.rcpt{display:inline-flex;align-items:center;gap:8px;padding:6px 10px 6px 6px;border-radius:99px;border:1px solid var(--line);background:var(--panel-2);font-weight:600;font-size:13px;transition:all .2s}
+.rcpt small{color:var(--muted);font-weight:400;font-size:12px}
+.rcpt .i{width:14px;height:14px;color:var(--muted)}
+.rcpt.on{border-color:var(--accent);background:var(--accent-soft)}
+.rcpt.on .i{color:var(--accent)}
 .members{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
 .mem{padding:16px;display:flex;flex-direction:column;gap:12px}
 .mem-top{display:flex;gap:12px;align-items:center}
@@ -326,6 +337,13 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .quick button{font-size:12px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);color:var(--fg-2);font-family:var(--f-num)}
 .quick button:hover{border-color:var(--accent);color:var(--accent)}
 .sellers{display:flex;flex-wrap:wrap;gap:6px}
+.anyseller{display:flex;gap:12px;align-items:center;text-align:left;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);margin-bottom:10px;transition:border-color .2s,background .2s}
+.anyseller.on{border-color:var(--accent);background:var(--accent-soft)}
+.anyseller b{display:block;font-weight:600;font-size:13.5px}
+.anyseller small{color:var(--muted);font-size:12px}
+.sw{width:38px;height:22px;border-radius:99px;background:var(--line-2);position:relative;flex:none;transition:background .2s}
+.sw i{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.anyseller.on .sw{background:var(--accent)} .anyseller.on .sw i{transform:translateX(16px)}
 .spick{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow:auto;padding-right:4px}
 .sg-h{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .sg-all{font-size:12px;color:var(--accent);font-weight:600;letter-spacing:0;text-transform:none}
@@ -454,7 +472,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
     <button class="stopall" id="stopAllBtn"><span data-i="shield"></span>Stop all agents</button>
     <div class="me">
       <div class="pfp" style="background:var(--accent-soft);color:var(--accent)">PA</div>
-      <div><b>Parent A</b><small>Owner · full control</small></div>
+      <div><b id="meName">Parent A</b><small>Owner · full control</small></div>
     </div>
   </aside>
 
@@ -550,7 +568,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 
       <!-- REPORT -->
       <section class="view" id="v-report">
-        <div class="head"><div><h1>Weekly report</h1><p>What lands in your inbox every Monday at 08:00. The Stop buttons work.</p></div></div>
+        <div class="head"><div><h1>Weekly report</h1><p>Pick who in the family gets it. If David is ticked, he sees it on his phone.</p></div></div>
+        <div class="panel mail" id="reportWho"></div>
         <div class="panel mail" id="mail"></div>
       </section>
     </div>
@@ -630,13 +649,14 @@ const CATALOG={
  gifts:{label:'Gifts',sellers:['John Lewis','Etsy','Not On The High Street']},
 };
 const ALL_SELLERS=[...new Set(Object.values(CATALOG).flatMap(c=>c.sellers))];
-const MEMBERS=[
+let MEMBERS=[
  {id:'femi',name:'Parent A',short:'Parent A',ini:'PA',role:'Owner',note:'Wallet owner · you',color:'var(--accent)'},
  {id:'bunmi',name:'Parent B',short:'Parent B',ini:'PB',role:'Admin',note:'Can raise limits up to £500',color:'var(--good)'},
  {id:'ada',name:'David',short:'David',ini:'D',role:'Member',note:'15 · uses agents on the phone app',color:'#d4497a'},
  {id:'tobi',name:'Mark',short:'Mark',ini:'M',role:'Viewer',note:'8 · no access yet',color:'#7a5cd6'},
 ];
-const mem=id=>MEMBERS.find(m=>m.id===id);
+const mem=id=>MEMBERS.find(m=>m.id===id)||{id,name:'Removed member',short:'Removed member',ini:'?',role:'Removed',note:'',color:'var(--faint)'};
+const ownerName=()=>mem('femi').short;
 const n0=now();
 const S={
  agents:[
@@ -645,7 +665,7 @@ const S={
   {id:'trip',name:'Trip Planner',purpose:'Train and flight tickets, hotels, car hire',icon:'plane',color:'#e5732a',cat:'travel',sponsor:'femi',perPayment:400,perDay:800,sellers:['LNER','Trainline','British Airways','Booking.com'],expires:new Date(+sod(n0)+12*DAY),status:'active',range:[20,90],freq:.12,max:1},
   {id:'grocery',name:'Grocery Runner',purpose:'Weekly food shop and household basics',icon:'cart',color:'#7a5cd6',cat:'grocery',sponsor:'bunmi',perPayment:120,perDay:150,sellers:['Tesco',"Sainsbury's"],expires:new Date(+sod(n0)+150*DAY),status:'active',range:[82,119],freq:0,max:1}, 
 ],
- tx:[],audit:[],requests:[],view:'overview',live:false,txFilter:'all',chartMode:'stack',q:'',
+ tx:[],audit:[],requests:[],reportTo:['femi','bunmi'],reportSent:null,view:'overview',live:false,txFilter:'all',chartMode:'stack',q:'',
 };
 const ag=id=>S.agents.find(a=>a.id===id);
 
@@ -698,7 +718,7 @@ function authorise(a,seller,amount){
   const checks=[
     {k:'Agent is active',test:()=>a.status==='active',why:a.status==='expired'?'Permission ended':'Agent stopped'},
     {k:'Permission has not ended',test:()=>a.expires>now(),why:'Permission ended'},
-    {k:'Seller is on the allowlist',test:()=>a.sellers.includes(seller),why:'Seller not allowed'},
+    {k:'Seller is on the allowlist',test:()=>!!a.anySeller||a.sellers.includes(seller),why:'Seller not allowed'},
     {k:`Within ${gbpShort(a.perPayment)} per payment`,test:()=>amount<=a.perPayment,why:`Over per-payment cap (${gbpShort(a.perPayment)})`},
     {k:`Within ${gbpShort(a.perDay)} per day`,test:()=>round2(spentToday(a.id)+amount)<=a.perDay,why:`Over daily cap (${gbpShort(a.perDay)})`},
   ];
@@ -789,7 +809,7 @@ function renderKPIs(){
     <div class="kpi-f"><span>${pend} request${pend===1?'':'s'} · ${al} alert${al===1?'':'s'}</span><button class="delta neutral" data-scroll="attn">Review ${I('arrow')}</button></div></div>`;
   $$('#kpis [data-to]').forEach(countUp);
   const h=n.getHours();
-  $('#greet').innerHTML=`${h<12?'Morning':h<18?'Afternoon':'Evening'}, <em>Parent A</em>`;
+  $('#greet').innerHTML=`${h<12?'Morning':h<18?'Afternoon':'Evening'}, <em>${esc(ownerName())}</em>`;
   $('#subGreet').textContent=`${active} of ${la.length} agents can spend from the family wallet. ${gbp(week)} spent since Monday.`;
   $('#navAgents').textContent=la.length;
   $('#navReq').textContent=pend; $('#navReq').hidden=!pend;
@@ -828,7 +848,7 @@ function cardHTML(a){
   `<div class="a-meter"><div class="row"><span>Today <b class="num">${gbp(td)}</b> of ${gbpShort(a.perDay)}</span><span class="num">${Math.round(pct)}%</span></div>
     <div class="bar"><i class="${pct>=100?'full':pct>=80?'warn':''}" style="width:${prevBar[a.id]??0}%" data-w="${pct}"></i></div></div>`}
   <div class="a-last">${lt?`${lt.ok?I('check'):I('x','x')}<span>Last: <b>${esc(lt.seller)}</b> · <span class="num">${gbp(lt.amount)}</span> · ${ago(lt.t)}${lt.ok?'':' · declined'}</span>`:'<span>No payments yet</span>'}</div>
-  <div class="chips"><span class="chip"><span class="num">${gbpShort(a.perPayment)}</span> / payment</span><span class="chip">${a.sellers.length} seller${a.sellers.length===1?'':'s'}</span><span class="chip ${dl<=14?'warn':''}">${dl<0?'ended':dl===0?'ends today':`${dl}d left`}</span></div>
+  <div class="chips"><span class="chip"><span class="num">${gbpShort(a.perPayment)}</span> / payment</span><span class="chip">${a.anySeller?'Any seller':`${a.sellers.length} seller${a.sellers.length===1?'':'s'}`}</span><span class="chip ${dl<=14?'warn':''}">${dl<0?'ended':dl===0?'ends today':`${dl}d left`}</span></div>
   <div class="a-act">${act}</div>`;
 }
 function renderCards(){
@@ -966,38 +986,93 @@ function auditHTML(list){
 }
 
 /* ---------- members ---------- */
+let memEdit=null, memKick=null;
+const MEM_COLORS=['#d4497a','#7a5cd6','#12a37f','#e5732a','#3b73e0','#c9a21a'];
+const initials=n=>n.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?';
 function renderMembers(){
+  $('#meName').textContent=ownerName();
   $('#members').innerHTML=MEMBERS.map(m=>{
-    const spons=liveAgents().filter(a=>a.sponsor===m.id);
-    return `<div class="panel mem"><div class="mem-top"><div class="pfp" style="background:color-mix(in srgb,${m.color} 18%,transparent);color:${m.color}">${m.ini}</div><div style="flex:1;min-width:0"><b>${m.name}</b><small>${m.note}</small></div><span class="role ${m.role.toLowerCase()}">${m.role}</span></div>
-    <div class="chips">${spons.length?spons.map(a=>`<span class="chip">${esc(a.name)}</span>`).join(''):'<span class="chip">No agents</span>'}</div>
-    ${m.id==='femi'?'<small style="color:var(--muted)">Only you can invite people or change roles.</small>':`<select class="sel" id="role-${m.id}" data-role="${m.id}" aria-label="Role for ${m.name}">${['Owner','Admin','Member','Viewer'].map(r=>`<option ${r===m.role?'selected':''}>${r}</option>`).join('')}</select>`}</div>`}).join('');
-  const rows=[['See all agents and spend','y','y','y','y'],['Stop any agent','y','y','y','n'],['Resume a stopped agent','y','y','Own agents','n'],['Create an agent','y','y','Request only','n'],['Raise a limit or add a seller','y','Up to £500','Request only','n'],['Lower a limit or remove a seller','y','y','Own agents','n'],['Remove an agent for good','y','y','n','n'],['Invite people, change roles','y','n','n','n']];
+    const spons=liveAgents().filter(a=>a.sponsor===m.id), isOwner=m.id==='femi', gets=S.reportTo.includes(m.id);
+    const nameBlock=memEdit===m.id
+      ?`<div style="display:flex;gap:6px;flex:1;min-width:0"><input class="inp" id="rename-${m.id}" value="${esc(m.name)}" aria-label="New name" style="height:36px"><button class="btn primary sm" data-renamesave="${m.id}">Save</button></div>`
+      :`<div style="flex:1;min-width:0"><b>${esc(m.name)}</b><small>${esc(m.note||'')}</small></div><span class="role ${m.role.toLowerCase()}">${m.role}</span>`;
+    return `<div class="panel mem"><div class="mem-top"><div class="pfp" style="background:color-mix(in srgb,${m.color} 18%,transparent);color:${m.color}">${esc(m.ini)}</div>${nameBlock}</div>
+    <div class="chips">${spons.length?spons.map(a=>`<span class="chip">${esc(a.name)}</span>`).join(''):'<span class="chip">No agents</span>'}${m.id==='ada'?'<span class="chip">Has the phone app</span>':''}</div>
+    <label class="chk"><input type="checkbox" data-report="${m.id}" ${gets?'checked':''}><span>Gets the weekly report${m.id==='ada'?' (shows on the phone)':''}</span></label>
+    ${isOwner?'':`<select class="sel" id="role-${m.id}" data-role="${m.id}" aria-label="Role for ${esc(m.name)}">${['Admin','Member','Viewer'].map(r=>`<option ${r===m.role?'selected':''}>${r}</option>`).join('')}</select>`}
+    <div class="mem-act"><button class="btn ghost sm" data-rename="${m.id}">${I('sliders')}Rename</button>${isOwner?'<small style="color:var(--muted);align-self:center">You own this wallet</small>':`<button class="btn ghost sm kick ${memKick===m.id?'armed':''}" data-kick="${m.id}">${I('trash')}${memKick===m.id?'Tap again to remove':'Remove from family'}</button>`}</div></div>`}).join('')+
+  `<div class="panel mem addmem"><b style="font-weight:600">Add someone to the family</b>
+    <input class="inp" id="nmName" placeholder="Name, e.g. Grandma Ruth">
+    <input class="inp" id="nmNote" placeholder="Note, e.g. 68 · helps with shopping">
+    <select class="sel" id="nmRole" aria-label="Role">${['Member','Admin','Viewer'].map(r=>`<option>${r}</option>`).join('')}</select>
+    <button class="btn primary sm" id="nmAdd">${I('plus')}Add to family</button></div>`;
+  const rows=[['See all agents and spend','y','y','y','y'],['Stop any agent','y','y','y','n'],['Resume a stopped agent','y','y','Own agents','n'],['Create an agent','y','y','Request only','n'],['Raise a limit or add a seller','y','Up to £500','Request only','n'],['Lower a limit or remove a seller','y','y','Own agents','n'],['Remove an agent for good','y','y','n','n'],['Add, rename or remove family members','y','n','n','n']];
   const c=v=>v==='y'?'<span class="yes">✓</span>':v==='n'?'<span class="no">—</span>':`<span class="part">${v}</span>`;
   $('#matrix').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td>${r.slice(1).map(v=>`<td>${c(v)}</td>`).join('')}</tr>`).join('');
 }
+function addMember(){
+  const name=$('#nmName').value.trim(); if(name.length<2){toast({kind:'warn',title:'Type a name first'});return}
+  const m={id:id('m'),name,short:name.split(/\s+/)[0],ini:initials(name),role:$('#nmRole').value,note:$('#nmNote').value.trim()||'Family member',color:MEM_COLORS[MEMBERS.length%MEM_COLORS.length]};
+  MEMBERS.push(m); log('femi','Added member','',"",`${name} · ${m.role}`,'create');
+  render(); toast({kind:'ok',title:`${name} joined the family wallet`,sub:`Role: ${m.role}. They can now be given agents.`});
+}
+function renameMember(mid){
+  const m=mem(mid), v=$('#rename-'+mid).value.trim(); if(v.length<2)return;
+  const old=m.name; m.name=v; m.short=v.split(/\s+/)[0]; m.ini=initials(v); memEdit=null;
+  log('femi','Renamed member','',old,v,''); render(); toast({kind:'ok',title:`${old} is now ${v}`,sub:'Updated everywhere, including the phone.'});
+}
+function kickMember(mid){
+  const m=mem(mid); memKick=null;
+  const theirs=liveAgents().filter(a=>a.sponsor===mid);
+  theirs.forEach(a=>{if(a.status==='active'){a.status='paused';a.pausedBy='femi';a.pausedAt=now()}a.sponsor='femi'});
+  S.requests.filter(r=>r.by===mid&&r.status==='pending').forEach(r=>{r.status='declined';r.decided='femi';r.dt=now()});
+  S.reportTo=S.reportTo.filter(x=>x!==mid);
+  MEMBERS=MEMBERS.filter(x=>x.id!==mid);
+  log('femi','Removed member','',m.name,'Removed','stop');
+  render(); toast({kind:'stop',title:`${m.name} removed from the family`,sub:theirs.length?`${theirs.length} agent${theirs.length===1?'':'s'} they used ${theirs.length===1?'is':'are'} paused and moved to you.`:'They no longer have access.'});
+}
 
 /* ---------- weekly report ---------- */
-function renderReport(){
+function buildReport(){
   const wk=sow(now()), from=new Date(+wk-7*DAY), to=wk;
-  const rows=liveAgents().map(a=>{const t=okTx(a.id,from,to);return{a,total:sum(t),n:t.length}}).sort((x,y)=>y.total-x.total);
-  const total=round2(rows.reduce((s,r)=>s+r.total,0));
+  const rows=liveAgents().map(a=>{const t=okTx(a.id,from,to);return{id:a.id,name:a.name,icon:a.icon,color:a.color,status:a.status,total:sum(t),n:t.length}}).sort((x,y)=>y.total-x.total);
   const allOk=okTx(null,from,to), big=allOk.reduce((b,t)=>!b||t.amount>b.amount?t:b,null);
-  const dec=S.tx.filter(t=>!t.ok&&t.t>=from&&t.t<to);
-  const exp=liveAgents().filter(a=>daysLeft(a.expires)<=21&&a.status!=='revoked').sort((a,b)=>a.expires-b.expires);
-  const end=new Date(+to-DAY);
-  $('#mail').innerHTML=`<div class="mail-meta"><span>From</span><b>Family wallet</b><span>To</span><b>Parent A</b><span>Subject</span><b>Your AI helpers spent ${gbp(total)} last week</b></div>
-  <div class="mail-body"><h3>Hi Parent A, here’s last week</h3><p>${from.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} to ${end.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}. <b class="num">${gbp(total)}</b> across ${rows.filter(r=>r.n).length} agents.</p>
-  <div>${rows.map(r=>`<div class="mrow" style="--c:${r.a.color}"><div class="a-ic">${I(r.a.icon)}</div><div class="n"><b>${esc(r.a.name)}</b><small>${r.n} payment${r.n===1?'':'s'} · ${r.a.status==='active'?'active':r.a.status}</small></div><span class="num">${gbp(r.total)}</span>
-    ${r.a.status==='active'?`<button class="btn stop sm" data-stop="${r.a.id}">${I('stop')}Stop</button>`:`<button class="btn ghost sm" disabled>${r.a.status==='paused'?'Stopped':'Expired'}</button>`}</div>`).join('')}</div>
-  <div class="facts"><div class="fact"><small>Biggest payment</small><p>${big?`${esc(ag(big.agent).name)}, <span class="num">${gbp(big.amount)}</span> to ${esc(big.seller)}`:'None'}</p></div>
-  <div class="fact"><small>Declined</small><p>${dec.length?dec.slice(0,2).map(t=>`${esc(ag(t.agent).name)} tried <span class="num">${gbp(t.amount)}</span> (${esc(t.reason.toLowerCase())})`).join('<br>'):'Nothing was declined'}</p></div>
-  <div class="fact"><small>Ending soon</small><p>${exp.length?exp.slice(0,2).map(a=>`${esc(a.name)} ends ${a.expires.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}`).join('<br>'):'Nothing in the next 3 weeks'}</p></div></div>
+  return {from,end:new Date(+to-DAY),total:round2(rows.reduce((s,r)=>s+r.total,0)),rows,
+    big:big?{name:ag(big.agent).name,amount:big.amount,seller:big.seller}:null,
+    dec:S.tx.filter(t=>!t.ok&&t.t>=from&&t.t<to).slice(0,2).map(t=>({name:ag(t.agent).name,amount:t.amount,reason:t.reason})),
+    exp:liveAgents().filter(a=>daysLeft(a.expires)<=21).sort((a,b)=>a.expires-b.expires).slice(0,2).map(a=>({name:a.name,expires:a.expires}))};
+}
+function sendReport(){
+  if(!S.reportTo.length){toast({kind:'warn',title:'Pick at least one person',sub:'Tick who should get the report.'});return}
+  S.reportSent={t:now(),to:[...S.reportTo]};
+  log('femi','Sent weekly report','','',S.reportTo.map(x=>mem(x).short).join(', '),'');
+  render(); toast({kind:'ok',title:'Weekly report sent',sub:`To ${S.reportTo.map(x=>mem(x).short).join(', ')}.`});
+}
+function renderReport(){
+  const r=buildReport(), dd=d=>d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  const to=S.reportTo.map(x=>mem(x)), first=to[0]?to[0].short:'nobody yet';
+  $('#reportWho').innerHTML=`<div class="panel-h"><span data-i></span>${I('users')}<h2>Who gets this report</h2><small>every Monday at 08:00</small></div>
+   <div class="panel-b" style="display:flex;flex-direction:column;gap:12px">
+    <div class="rcpts">${MEMBERS.map(m=>`<button class="rcpt ${S.reportTo.includes(m.id)?'on':''}" data-rtoggle="${m.id}" aria-pressed="${S.reportTo.includes(m.id)}"><span class="pfp" style="width:26px;height:26px;font-size:11px;background:color-mix(in srgb,${m.color} 18%,transparent);color:${m.color}">${esc(m.ini)}</span>${esc(m.short)}<small>${m.role}${m.id==='ada'?' · phone':''}</small>${I(S.reportTo.includes(m.id)?'check':'plus')}</button>`).join('')}</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn primary sm" id="sendReport">${I('mail')}Send now</button><small style="color:var(--muted)">${S.reportSent?`Last sent ${ago(S.reportSent.t)} to ${S.reportSent.to.map(x=>mem(x).short).join(', ')}`:'Not sent yet this week'}</small></div>
+   </div>`;
+  $('#mail').innerHTML=`<div class="mail-meta"><span>From</span><b>Family wallet</b><span>To</span><b>${to.length?to.map(m=>esc(m.name)).join(', '):'<span style="color:var(--bad)">Nobody picked</span>'}</b><span>Subject</span><b>Your AI helpers spent ${gbp(r.total)} last week</b></div>
+  <div class="mail-body"><h3>Hi ${esc(first)}, here’s last week</h3><p>${dd(r.from)} to ${dd(r.end)}. <b class="num">${gbp(r.total)}</b> across ${r.rows.filter(x=>x.n).length} agents.</p>
+  <div>${r.rows.map(x=>`<div class="mrow" style="--c:${x.color}"><div class="a-ic">${I(x.icon)}</div><div class="n"><b>${esc(x.name)}</b><small>${x.n} payment${x.n===1?'':'s'} · ${x.status}</small></div><span class="num">${gbp(x.total)}</span>
+    ${x.status==='active'?`<button class="btn stop sm" data-stop="${x.id}">${I('stop')}Stop</button>`:`<button class="btn ghost sm" disabled>${x.status==='paused'?'Stopped':'Expired'}</button>`}</div>`).join('')}</div>
+  <div class="facts"><div class="fact"><small>Biggest payment</small><p>${r.big?`${esc(r.big.name)}, <span class="num">${gbp(r.big.amount)}</span> to ${esc(r.big.seller)}`:'None'}</p></div>
+  <div class="fact"><small>Declined</small><p>${r.dec.length?r.dec.map(t=>`${esc(t.name)} tried <span class="num">${gbp(t.amount)}</span> (${esc(t.reason.toLowerCase())})`).join('<br>'):'Nothing was declined'}</p></div>
+  <div class="fact"><small>Ending soon</small><p>${r.exp.length?r.exp.map(a=>`${esc(a.name)} ends ${dd(a.expires)}`).join('<br>'):'Nothing in the next 3 weeks'}</p></div></div>
   <div><button class="btn primary" data-go="overview">Open control centre ${I('arrow')}</button></div></div>`;
 }
 
 /* ---------- seller picker: every shop, grouped, multi-select ---------- */
-function sellerPicker(selected,firstCat,attr){
+function sellerPicker(selected,firstCat,attr,any){
+  const tog=`<button class="anyseller ${any?'on':''}" data-anyseller="${attr}" aria-pressed="${!!any}"><span class="sw"><i></i></span><span><b>Any seller</b><small>${any?'Can buy from every shop. Per-payment and daily caps still apply.':'Turn on to let it buy from every shop, not just the ticked ones.'}</small></span></button>`;
+  if(any)return tog;
+  return tog+sellerPicker2(selected,firstCat,attr);
+}
+function sellerPicker2(selected,firstCat,attr){
   const cats=Object.entries(CATALOG).sort((a,b)=>(b[0]===firstCat)-(a[0]===firstCat));
   const custom=selected.filter(x=>!ALL_SELLERS.includes(x));
   const group=(key,label,list)=>{const all=list.every(x=>selected.includes(x));
@@ -1010,7 +1085,7 @@ function toggleGroup(list,key){const g=key==='_custom'?list.filter(x=>!ALL_SELLE
 let D=null;
 function openDrawer(aid){
   const a=ag(aid); if(!a)return;
-  D={id:aid,draft:{perPayment:a.perPayment,perDay:a.perDay,sellers:[...a.sellers],expires:isoDate(a.expires)},revokeArm:false};
+  D={id:aid,draft:{perPayment:a.perPayment,perDay:a.perDay,sellers:[...a.sellers],anySeller:!!a.anySeller,expires:isoDate(a.expires)},revokeArm:false};
   drawDrawer(); $('#drawer').classList.add('on'); $('#scrim').classList.add('on');
 }
 function closeDrawer(){D=null;$('#drawer').classList.remove('on');if(!$('#modal').classList.contains('on'))$('#scrim').classList.remove('on')}
@@ -1035,7 +1110,7 @@ function drawDrawer(){
       ${ruleMoney('perPayment','Max per payment','The most it can pay in one go',maxPP)}
       ${ruleMoney('perDay','Max per day','Resets at midnight UK time',maxPD)}
       <div class="rule"><div class="rule-h"><div><b>Allowed sellers</b><small>Anyone not ticked is declined</small></div><span class="chip">${D.draft.sellers.length} allowed</span></div>
-        ${sellerPicker(D.draft.sellers,a.cat,'seller')}
+        ${sellerPicker(D.draft.sellers,a.cat,'seller',D.draft.anySeller)}
         <div class="add-seller"><input class="inp" id="newSeller" placeholder="Add a seller, e.g. Waitrose"><button class="btn ghost sm" id="addSellerBtn">Add</button></div></div>
       <div class="rule"><div class="rule-h"><div><b>Permission ends</b><small>After this date every payment is declined</small></div></div>
         <input class="inp" type="date" id="in-expires" value="${D.draft.expires}">
@@ -1058,6 +1133,7 @@ function diffs(){
   const a=ag(D.id), d=D.draft, out=[];
   if(d.perPayment!==a.perPayment) out.push(['Per payment',gbpShort(a.perPayment),gbpShort(d.perPayment),d.perPayment>a.perPayment]);
   if(d.perDay!==a.perDay) out.push(['Per day',gbpShort(a.perDay),gbpShort(d.perDay),d.perDay>a.perDay]);
+  if(!!d.anySeller!==!!a.anySeller) out.push(['Any seller',a.anySeller?'On':'Off',d.anySeller?'On':'Off',!!d.anySeller]);
   const add=d.sellers.filter(s=>!a.sellers.includes(s)), rem=a.sellers.filter(s=>!d.sellers.includes(s));
   if(add.length) out.push(['Added seller','',add.join(', '),true]);
   if(rem.length) out.push(['Removed seller',rem.join(', '),'',false]);
@@ -1067,20 +1143,20 @@ function diffs(){
 function updateDiff(){
   if(!D)return; const ds=diffs(), d=D.draft;
   $('#drDiff').innerHTML=ds.length?`<b>${ds.length} change${ds.length===1?'':'s'}</b> · `+ds.map(x=>`${x[0]} ${x[1]?x[1]+' → ':''}${x[2]}`).join(' · '):'No unsaved changes';
-  $('#drSave').disabled=!ds.length||!d.expires||d.perPayment<1||d.perDay<1||!d.sellers.length;
+  $('#drSave').disabled=!ds.length||!d.expires||d.perPayment<1||d.perDay<1||(!d.sellers.length&&!d.anySeller);
   $('#drDiscard').disabled=!ds.length;
   const w=[]; if(d.perPayment>d.perDay) w.push('Per payment is higher than per day, so the daily cap will block big payments.');
-  if(!d.sellers.length) w.push('Pick at least one seller.'); if(!d.expires) w.push('Every agent needs an end date.');
+  if(!d.sellers.length&&!d.anySeller) w.push('Pick at least one seller.'); if(!d.expires) w.push('Every agent needs an end date.');
   $('#ruleWarn').innerHTML=w.map(x=>`<div class="warn-t">${I('alert')} ${x}</div>`).join('');
   ['perPayment','perDay'].forEach(k=>{const rg=$('#rg-'+k),inp=$('#in-'+k);if(rg){const mx=+rg.max;rg.value=Math.min(d[k],mx);rg.style.setProperty('--p',Math.min(d[k],mx)/mx*100+'%')}if(inp&&document.activeElement!==inp)inp.value=d[k]});
 }
 function saveDraft(){
   const a=ag(D.id), ds=diffs(), d=D.draft;
   ds.forEach(x=>log('femi',x[0]==='Per payment'?(x[3]?'Raised per-payment cap':'Lowered per-payment cap'):x[0]==='Per day'?(x[3]?'Raised daily cap':'Lowered daily cap'):x[0]==='Ends'?'Changed end date':x[0],a.id,x[1],x[2],x[3]?'raise':''));
-  a.perPayment=d.perPayment;a.perDay=d.perDay;a.sellers=[...d.sellers];a.expires=new Date(d.expires+'T23:59');
+  a.perPayment=d.perPayment;a.perDay=d.perDay;a.sellers=[...d.sellers];a.anySeller=!!d.anySeller;a.expires=new Date(d.expires+'T23:59');
   if(a.status==='expired'&&a.expires>now()){a.status='active';log('femi','Renewed agent',a.id,'Expired','Active','raise')}
   toast({kind:'ok',title:`${a.name} updated`,sub:ds.map(x=>`${x[0]} ${x[2]||'removed'}`).join(' · ')});
-  D.draft={perPayment:a.perPayment,perDay:a.perDay,sellers:[...a.sellers],expires:isoDate(a.expires)};
+  D.draft={perPayment:a.perPayment,perDay:a.perDay,sellers:[...a.sellers],anySeller:!!a.anySeller,expires:isoDate(a.expires)};
   render(); drawDrawer();
 }
 
@@ -1092,7 +1168,7 @@ function openModal(html){const m=$('#modal');m.innerHTML=html;m.classList.add('o
 function closeModal(){M=null;$('#modal').classList.remove('on');if(!$('#drawer').classList.contains('on'))$('#scrim').classList.remove('on')}
 function openAdd(){
   const eoy=new Date(now().getFullYear(),11,31);
-  M={type:'add',step:1,f:{name:'',purpose:'',icon:'book',cat:'education',sponsor:'ada',perPayment:'',perDay:'',sellers:[],expires:'',color:COLOR_OPTS[0]}};
+  M={type:'add',step:1,f:{name:'',purpose:'',icon:'book',cat:'education',sponsor:'ada',perPayment:'',perDay:'',sellers:[],anySeller:false,expires:'',color:COLOR_OPTS[0]}};
   M.eoy=isoDate(eoy); drawAdd();
 }
 function demoFill(){let e=new Date(2026,9,23);if(e<now())e=new Date(+sod(now())+23*DAY);Object.assign(M.f,{name:'Homework Tutor',purpose:'Revision apps, e-books, practice papers',icon:'book',cat:'education',sponsor:'ada',perPayment:10,perDay:20,sellers:['Revision Hub','PaperStack','Study Books'],expires:isoDate(e),color:'#d4497a'});drawAdd()}
@@ -1110,23 +1186,23 @@ function drawAdd(){
     const pool=[...new Set([...CATALOG[f.cat].sellers,...f.sellers])];
     body=`<div class="grid2"><div class="field"><label for="f-pp">Max per payment (£)</label><input class="inp num" type="number" min="1" id="f-pp" value="${f.perPayment}" placeholder="50"></div>
     <div class="field"><label for="f-pd">Max per day (£)</label><input class="inp num" type="number" min="1" id="f-pd" value="${f.perDay}" placeholder="100"></div></div>
-    <div class="field"><label>Allowed sellers <span style="color:var(--muted);font-weight:400">· ${f.sellers.length} picked, tick as many as you like</span></label>${sellerPicker(f.sellers,f.cat,'fseller')}<div class="add-seller"><input class="inp" id="fNewSeller" placeholder="Add another shop, e.g. Waitrose"><button class="btn ghost sm" id="fAddSeller">Add</button></div><small>Anything you don’t tick is declined.</small></div>
+    <div class="field"><label>Allowed sellers <span style="color:var(--muted);font-weight:400">· ${f.anySeller?'any seller':f.sellers.length+' picked, tick as many as you like'}</span></label>${sellerPicker(f.sellers,f.cat,'fseller',f.anySeller)}<div class="add-seller"><input class="inp" id="fNewSeller" placeholder="Add another shop, e.g. Waitrose"><button class="btn ghost sm" id="fAddSeller">Add</button></div><small>Anything you don’t tick is declined.</small></div>
     <div class="field"><label for="f-exp">Permission ends (required)</label><input class="inp" type="date" id="f-exp" value="${f.expires}"><div class="quick"><button data-fexp="30">+30 days</button><button data-fexp="90">+90 days</button><button data-fexp="eoy">End of year</button></div></div>`;
   }
   if(s===3) body=`<div class="acard" style="--c:${f.color};pointer-events:none"><div class="a-top"><div class="a-ic">${I(f.icon)}</div><div class="a-name"><b>${esc(f.name)}</b><small>Used by ${mem(f.sponsor).short}</small></div><span class="status active"><i></i>Active</span></div></div>
-    <div class="review"><div><span>Buys</span><b>${esc(f.purpose||'—')}</b></div><div><span>Max per payment</span><b class="num">${gbpShort(+f.perPayment)}</b></div><div><span>Max per day</span><b class="num">${gbpShort(+f.perDay)}</b></div><div><span>Allowed sellers</span><b>${f.sellers.map(esc).join(', ')}</b></div><div><span>Permission ends</span><b>${fmtDate(new Date(f.expires+'T00:00'))}</b></div></div>
+    <div class="review"><div><span>Buys</span><b>${esc(f.purpose||'—')}</b></div><div><span>Max per payment</span><b class="num">${gbpShort(+f.perPayment)}</b></div><div><span>Max per day</span><b class="num">${gbpShort(+f.perDay)}</b></div><div><span>Allowed sellers</span><b>${f.anySeller?'Any seller':f.sellers.map(esc).join(', ')}</b></div><div><span>Permission ends</span><b>${fmtDate(new Date(f.expires+'T00:00'))}</b></div></div>
     <small style="color:var(--muted)">A spend key with exactly these four rules is created. You can Stop it any time.</small>`;
-  const valid=s===1?f.name.trim().length>1:s===2?(+f.perPayment>0&&+f.perDay>0&&f.sellers.length&&f.expires):true;
+  const valid=s===1?f.name.trim().length>1:s===2?(+f.perPayment>0&&+f.perDay>0&&(f.sellers.length||f.anySeller)&&f.expires):true;
   openModal(`<div class="m-h"><div class="a-ic" style="--c:var(--accent)">${I('plus')}</div><h3>Add an agent</h3><button class="icon-btn" data-close aria-label="Close">${I('x')}</button></div>
     <div class="steps">${steps}</div><div class="m-b">${body}</div>
     <div class="m-f">${s>1?'<button class="btn ghost" id="mBack">Back</button>':''}<div class="sp"></div><button class="btn primary" id="mNext" ${valid?'':'disabled'}>${s===3?I('check')+'Create agent':'Continue'}</button></div>`);
 }
 function createAgent(){
   const f=M.f, aid='a'+(uid++);
-  S.agents.push({id:aid,name:f.name.trim(),purpose:f.purpose.trim()||'—',icon:f.icon,color:f.color,cat:f.cat,sponsor:f.sponsor,perPayment:+f.perPayment,perDay:+f.perDay,sellers:[...f.sellers],expires:new Date(f.expires+'T23:59'),status:'active',born:true});
+  S.agents.push({id:aid,name:f.name.trim(),purpose:f.purpose.trim()||'—',icon:f.icon,color:f.color,cat:f.cat,sponsor:f.sponsor,perPayment:+f.perPayment,perDay:+f.perDay,sellers:[...f.sellers],anySeller:!!f.anySeller,expires:new Date(f.expires+'T23:59'),status:'active',born:true});
   log('femi','Created agent',aid,'',`${f.name} · ${gbpShort(+f.perPayment)} per payment, ${gbpShort(+f.perDay)} per day`,'create');
   closeModal(); go('overview'); render();
-  toast({kind:'ok',title:`${f.name} can now spend`,sub:`Up to ${gbpShort(+f.perDay)} a day at ${f.sellers.length} seller${f.sellers.length===1?'':'s'}.`});
+  toast({kind:'ok',title:`${f.name} can now spend`,sub:`Up to ${gbpShort(+f.perDay)} a day ${f.anySeller?' at any seller':` at ${f.sellers.length} seller${f.sellers.length===1?'':'s'}`}.`});
   setTimeout(()=>$(`.acard[data-id="${aid}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 }
 
@@ -1175,7 +1251,7 @@ function go(v){
 const KEY='fw-state-v1', DATE_KEYS=['expires','pausedAt','t','dt'];
 const bc='BroadcastChannel' in window?new BroadcastChannel('fw-sync'):null;
 let lastSaved='';
-const snapshot=()=>JSON.stringify({agents:S.agents,tx:S.tx.map(({fresh,...t})=>t),audit:S.audit,requests:S.requests,roles:MEMBERS.map(m=>m.role)});
+const snapshot=()=>JSON.stringify({agents:S.agents,tx:S.tx.map(({fresh,...t})=>t),audit:S.audit,requests:S.requests,members:MEMBERS,reportTo:S.reportTo,reportSent:S.reportSent});
 function persist(){const str=snapshot();if(str===lastSaved)return;lastSaved=str;sendOut(str);try{localStorage.setItem(KEY,str)}catch(e){}bc&&bc.postMessage({type:'state',str})}
 function applyState(str,remote){
   const d=JSON.parse(str,(k,v)=>DATE_KEYS.includes(k)&&typeof v==='string'?new Date(v):v);
@@ -1186,7 +1262,7 @@ function applyState(str,remote){
     const was=new Map(S.agents.map(a=>[a.id,a.status]));
     d.agents.forEach(a=>{if(was.get(a.id)==='active'&&a.status==='paused'&&a.pausedBy==='ada')toast({kind:'stop',title:`David stopped ${a.name}`,sub:'From the phone app.'})});
   }
-  S.agents=d.agents;S.tx=d.tx;S.audit=d.audit;S.requests=d.requests;(d.roles||[]).forEach((r,i)=>MEMBERS[i]&&(MEMBERS[i].role=r));
+  S.agents=d.agents;S.tx=d.tx;S.audit=d.audit;S.requests=d.requests;if(d.members)MEMBERS=d.members;if(d.reportTo)S.reportTo=d.reportTo;S.reportSent=d.reportSent||null;
   lastSaved=str;try{localStorage.setItem(KEY,str)}catch(e){}
 }
 function onRemote(str){if(!str||str===lastSaved)return;applyState(str,true);Object.keys(cardSig).forEach(k=>delete cardSig[k]);render()}
@@ -1239,6 +1315,7 @@ document.addEventListener('click',e=>{
     if(d.step){D.draft[d.step]=Math.max(1,D.draft[d.step]+(+d.d));updateDiff();return}
     if(d.bump){D.draft[d.bump]=Math.max(1,D.draft[d.bump]+(+d.d));updateDiff();return}
     if(d.seller!==undefined){const s=d.seller,l=D.draft.sellers;D.draft.sellers=l.includes(s)?l.filter(x=>x!==s):[...l,s];t.classList.toggle('on');t.querySelector('svg').outerHTML=I(D.draft.sellers.includes(s)?'check':'plus');$('.rule .chip').textContent=D.draft.sellers.length+' allowed';updateDiff();return}
+    if(d.anyseller==='seller'){D.draft.anySeller=!D.draft.anySeller;const keep={...D.draft};drawDrawer();D.draft=keep;updateDiff();return}
     if(d.sgroup&&d.mode==='seller'){D.draft.sellers=toggleGroup(D.draft.sellers,d.sgroup);const keep={...D.draft};drawDrawer();D.draft=keep;updateDiff();return}
     if(t.id==='addSellerBtn'){const v=$('#newSeller').value.trim();if(v&&!D.draft.sellers.includes(v)){D.draft.sellers.push(v);const keep={...D.draft};drawDrawer();D.draft=keep;updateDiff()}return}
     if(d.exp){const b=new Date(Math.max(+ag(D.id).expires,+now()));const nd=d.exp==='eoy'?new Date(now().getFullYear(),11,31):new Date(+b+(+d.exp)*DAY);D.draft.expires=isoDate(nd);$('#in-expires').value=D.draft.expires;updateDiff();return}
@@ -1250,6 +1327,7 @@ document.addEventListener('click',e=>{
   if(M&&M.type==='add'){
     if(t.id==='demoFill'){demoFill();return}
     if(d.icon){M.f.icon=d.icon;drawAdd();return}
+    if(d.anyseller==='fseller'){M.f.anySeller=!M.f.anySeller;drawAdd();return}
     if(d.sgroup&&d.mode==='fseller'){M.f.sellers=toggleGroup(M.f.sellers,d.sgroup);drawAdd();return}
     if(t.id==='fAddSeller'){const v=$('#fNewSeller').value.trim();if(v&&!M.f.sellers.includes(v))M.f.sellers.push(v);drawAdd();return}
     if(d.fseller!==undefined){const s=d.fseller,l=M.f.sellers;M.f.sellers=l.includes(s)?l.filter(x=>x!==s):[...l,s];drawAdd();return}
@@ -1267,6 +1345,12 @@ document.addEventListener('click',e=>{
   if(t.id==='stopAllBtn'||t.id==='mStopAll'){openModal(`<div class="m-h"><div class="a-ic" style="--c:var(--bad)">${I('shield')}</div><h3>Stop every agent?</h3><button class="icon-btn" data-close aria-label="Close">${I('x')}</button></div><div class="m-b"><p style="margin:0;color:var(--fg-2)">All ${liveAgents().filter(a=>a.status==='active').length} active agents will be paused at once. Nothing will be able to spend from the family wallet until you resume them one by one.</p></div><div class="m-f"><button class="btn ghost" data-close>Cancel</button><button class="btn danger" id="confirmStopAll">${I('stop')}Stop all agents</button></div>`);M={type:'confirm'};return}
   if(t.id==='confirmStopAll'){stopAll();return}
   if(t.id==='resetBtn'){resetDemo();return}
+  if(d.rename){memEdit=d.rename;memKick=null;renderMembers();setTimeout(()=>{const i=$('#rename-'+d.rename);i&&(i.focus(),i.select())},0);return}
+  if(d.renamesave){renameMember(d.renamesave);return}
+  if(d.kick){if(memKick===d.kick)kickMember(d.kick);else{memKick=d.kick;renderMembers();setTimeout(()=>{if(memKick===d.kick){memKick=null;renderMembers()}},3500)}return}
+  if(t.id==='nmAdd'){addMember();return}
+  if(d.rtoggle){const x=d.rtoggle;S.reportTo=S.reportTo.includes(x)?S.reportTo.filter(y=>y!==x):[...S.reportTo,x];render();return}
+  if(t.id==='sendReport'){sendReport();return}
   if(t.id==='liveBtn'){S.live=!S.live;t.classList.toggle('live-on',S.live);t.setAttribute('aria-pressed',S.live);$('#liveTxt').textContent=S.live?'Live':'Paused feed';return}
   if(t.id==='themeBtn'){const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':!matchMedia('(prefers-color-scheme: light)').matches;r.dataset.theme=dark?'light':'dark';return}
   if(d.f){S.txFilter=d.f;$$('#txFilters .fchip').forEach(b=>b.classList.toggle('on',b===t));renderTables();return}
@@ -1282,7 +1366,7 @@ document.addEventListener('input',e=>{
   }
   if(M&&M.type==='add'){
     const f=M.f,map={'f-name':'name','f-purpose':'purpose','f-pp':'perPayment','f-pd':'perDay','f-exp':'expires'};
-    if(map[t.id]){f[map[t.id]]=t.value;const s=M.step,valid=s===1?f.name.trim().length>1:(+f.perPayment>0&&+f.perDay>0&&f.sellers.length&&f.expires);$('#mNext').disabled=!valid}
+    if(map[t.id]){f[map[t.id]]=t.value;const s=M.step,valid=s===1?f.name.trim().length>1:(+f.perPayment>0&&+f.perDay>0&&(f.sellers.length||f.anySeller)&&f.expires);$('#mNext').disabled=!valid}
   }
   if(M&&M.type==='sim'&&t.id==='s-amt'){M.amount=+t.value}
 });
@@ -1290,10 +1374,12 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(M&&M.type==='add'){if(t.id==='f-cat'){M.f.cat=t.value;M.f.sellers=[...CATALOG[t.value].sellers];}if(t.id==='f-sponsor')M.f.sponsor=t.value}
   if(M&&M.type==='sim'){if(t.id==='s-agent'){const a=ag(t.value);M.agent=t.value;M.seller=a.sellers[0]||ALL_SELLERS[0];M.result=null;drawSim()}if(t.id==='s-seller'){M.seller=t.value.replace(' · not allowed','');M.result=null;drawSim()}}
-  if(t.dataset.role){const m=mem(t.dataset.role);const old=m.role;m.role=t.value;toast({kind:'ok',title:`${m.short} is now ${t.value==='Admin'?'an':'a'} ${t.value}`,sub:`Was ${old}.`});renderMembers()}
+  if(t.dataset.report){const x=t.dataset.report;S.reportTo=t.checked?[...new Set([...S.reportTo,x])]:S.reportTo.filter(y=>y!==x);render();toast({kind:'ok',title:t.checked?`${mem(x).short} will get the weekly report`:`${mem(x).short} won’t get the weekly report`,sub:x==='ada'?(t.checked?'It shows on his phone now.':'Removed from his phone.'):''});return}
+  if(t.dataset.role){const m=mem(t.dataset.role);const old=m.role;m.role=t.value;log('femi','Changed role','',old,`${m.short}: ${t.value}`,'');toast({kind:'ok',title:`${m.short} is now ${t.value==='Admin'?'an':'a'} ${t.value}`,sub:`Was ${old}.`});render()}
 });
 $('#scrim').onclick=()=>{closeModal();closeDrawer()};
 document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){if(e.target.id==='nmName'||e.target.id==='nmNote'){addMember();return}if(e.target.id&&e.target.id.startsWith('rename-')){renameMember(e.target.id.slice(7));return}}
   if(e.key==='Escape'){if(M)closeModal();else if(D)closeDrawer()}
 
 });
