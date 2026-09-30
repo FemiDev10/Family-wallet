@@ -1,0 +1,60 @@
+<title>Family Wallet Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: slim header with the demo script, dashboard on the left, phone in a bezel on the right, both live on one shared store. */
+:root{--bg:#E4E8F0;--surface:#FFFFFF;--line:#DCE2EE;--ink:#17203A;--muted:#5B6682;--accent:#3F51D8;--accent-soft:#E6E9FF;--bezel:#1B1F2B;--stop:#D23B3B;
+  --display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;--body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);margin:0;overflow:hidden}
+button{font:inherit;cursor:pointer}
+.wrap{height:100%;display:flex;flex-direction:column;padding-inline:16px}
+header{display:flex;align-items:center;gap:14px;padding-block:12px;flex-wrap:wrap}
+header h1{font-family:var(--display);font-size:19px;margin:0;letter-spacing:-.01em}
+header h1 span{color:var(--muted);font-weight:500;font-family:var(--body);font-size:14px;margin-left:8px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center}
+.step{font-size:12.5px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:5px 11px;color:var(--muted);white-space:nowrap}
+.step b{color:var(--accent);margin-right:4px}
+.reset{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-weight:600;color:var(--ink)}
+.reset:hover{border-color:var(--stop);color:var(--stop)}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#1E8A58}
+.live i{width:8px;height:8px;border-radius:50%;background:#1E8A58;animation:p 1.6s infinite}
+@keyframes p{50%{opacity:.3}}
+main{flex:1;min-height:0;display:flex;gap:18px;padding-bottom:16px}
+.pane{display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
+.pane label{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-left:4px}
+.dash{flex:1}
+.dash iframe{flex:1;width:100%;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 10px 30px rgba(23,32,58,.08)}
+.ph{flex:none;align-items:center}
+.bezel{width:414px;flex:1;max-height:868px;border-radius:52px;background:var(--bezel);padding:12px;box-shadow:0 30px 70px rgba(23,32,58,.28);position:relative}
+.bezel::before{content:"";position:absolute;top:22px;left:50%;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#000;z-index:2}
+.bezel iframe{width:100%;height:100%;border:0;border-radius:40px;background:#EEF1F6;display:block}
+@media (max-width:980px){body{overflow:auto}.wrap{height:auto}main{flex-direction:column}.dash iframe{height:80vh;flex:none}.bezel{height:820px;flex:none;width:min(414px,100%)}.steps{justify-content:flex-start}}
+@media (prefers-reduced-motion:reduce){.live i{animation:none}}
+</style>
+<div class="wrap">
+  <header>
+    <h1>Family wallet<span>Parent A’s dashboard + Teenager’s phone</span></h1>
+    <div class="steps" aria-label="Demo script">
+      <span class="step"><b>1</b>Dashboard: Add agent → Homework Tutor</span>
+      <span class="step"><b>2</b>Phone: buy the £15 bundle → declined</span>
+      <span class="step"><b>3</b>Phone: Request more</span>
+      <span class="step"><b>4</b>Dashboard: approve £15 → phone buys it</span>
+      <span class="step"><b>5</b>Dashboard: Stop → phone shows Paused</span>
+    </div>
+    <span class="live"><i></i>Synced</span>
+    <button class="reset" id="reset">Reset demo</button>
+  </header>
+  <main>
+    <section class="pane dash"><label>Admin dashboard · Parent A</label><iframe id="fDash" src="dashboard.html" title="Admin dashboard"></iframe></section>
+    <section class="pane ph"><label>Phone app · Teenager</label><div class="bezel"><iframe id="fPhone" src="phone.html" title="Teenager phone app"></iframe></div></section>
+  </main>
+</div>
+<script>
+document.getElementById('reset').onclick=()=>{
+  try{localStorage.removeItem('fw-state-v1')}catch(e){}
+  const d=document.getElementById('fDash'),p=document.getElementById('fPhone');
+  d.src='dashboard.html';setTimeout(()=>{p.src='phone.html'},600);
+};
+</script>

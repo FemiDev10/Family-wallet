@@ -447,6 +447,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
     <div class="nav-h">Reports</div>
     <button class="nav" data-go="report"><span data-i="mail"></span>Weekly report</button>
     <div class="sp"></div>
+    <button class="nav" id="resetBtn" style="color:var(--muted);font-size:13px">Reset demo data</button>
     <button class="stopall" id="stopAllBtn"><span data-i="shield"></span>Stop all agents</button>
     <div class="me">
       <div class="pfp" style="background:var(--accent-soft);color:var(--accent)">PA</div>
@@ -613,7 +614,7 @@ const isoDate=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMon
 const round2=n=>Math.round(n*100)/100;
 let seed=11;const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 const pick=a=>a[Math.floor(rnd()*a.length)];
-let uid=100;const id=p=>p+(uid++);
+let uid=100;const id=p=>p+Date.now().toString(36).slice(-4)+Math.random().toString(36).slice(2,6);
 
 /* ---------- data ---------- */
 const CATALOG={
@@ -621,14 +622,15 @@ const CATALOG={
  code:{label:'Developer',sellers:['AWS','Vercel','Anthropic API','GitHub']},
  travel:{label:'Travel',sellers:['LNER','Trainline','British Airways','Booking.com','Enterprise']},
  grocery:{label:'Groceries',sellers:["Tesco","Sainsbury's",'Ocado']},
- education:{label:'Education',sellers:['Seneca Learning','Kindle Store','CGP Books']},
+ education:{label:'Study shops',sellers:['Revision Hub','PaperStack','Study Books']},
+ games:{label:'Games',sellers:['Game Store']},
  gifts:{label:'Gifts',sellers:['John Lewis','Etsy','Not On The High Street']},
 };
 const ALL_SELLERS=[...new Set(Object.values(CATALOG).flatMap(c=>c.sellers))];
 const MEMBERS=[
  {id:'femi',name:'Parent A',short:'Parent A',ini:'PA',role:'Owner',note:'Wallet owner · you',color:'var(--accent)'},
  {id:'bunmi',name:'Parent B',short:'Parent B',ini:'PB',role:'Admin',note:'Can raise limits up to £500',color:'var(--good)'},
- {id:'ada',name:'Teenager',short:'Teenager',ini:'T',role:'Member',note:'15 · uses Homework Tutor on the phone app',color:'#d4497a'},
+ {id:'ada',name:'Teenager',short:'Teenager',ini:'T',role:'Member',note:'15 · uses agents on the phone app',color:'#d4497a'},
  {id:'tobi',name:'Child',short:'Child',ini:'C',role:'Viewer',note:'8 · no access in v1',color:'#7a5cd6'},
 ];
 const mem=id=>MEMBERS.find(m=>m.id===id);
@@ -638,9 +640,8 @@ const S={
   {id:'research',name:'Research Scout',purpose:'Paywalled articles, reports and data API credits',icon:'search',color:'#12a37f',cat:'research',sponsor:'femi',perPayment:5,perDay:15,sellers:['FT.com','Nature','JSTOR','Statista API'],expires:new Date(+sod(n0)+61*DAY),status:'active',range:[1,5],freq:.85,max:3},
   {id:'code',name:'Code Helper',purpose:'Cloud hosting, API credits, developer tools',icon:'code',color:'#3b73e0',cat:'code',sponsor:'bunmi',perPayment:20,perDay:30,sellers:['AWS','Vercel','Anthropic API','GitHub'],expires:new Date(+sod(n0)+18*DAY),status:'active',range:[4,18],freq:.6,max:2},
   {id:'trip',name:'Trip Planner',purpose:'Train and flight tickets, hotels, car hire',icon:'plane',color:'#e5732a',cat:'travel',sponsor:'femi',perPayment:400,perDay:800,sellers:['LNER','Trainline','British Airways','Booking.com'],expires:new Date(+sod(n0)+12*DAY),status:'active',range:[20,90],freq:.12,max:1},
-  {id:'grocery',name:'Grocery Runner',purpose:'Weekly food shop and household basics',icon:'cart',color:'#7a5cd6',cat:'grocery',sponsor:'bunmi',perPayment:120,perDay:150,sellers:['Tesco',"Sainsbury's"],expires:new Date(+sod(n0)+150*DAY),status:'active',range:[82,119],freq:0,max:1},
-  {id:'homework',name:'Homework Tutor',purpose:'Revision apps, e-books, practice papers',icon:'book',color:'#d4497a',cat:'education',sponsor:'ada',perPayment:10,perDay:10,sellers:['Seneca Learning','Kindle Store','CGP Books'],expires:new Date(+sod(n0)+79*DAY),status:'active',range:[2,6],freq:.3,max:1},
- ],
+  {id:'grocery',name:'Grocery Runner',purpose:'Weekly food shop and household basics',icon:'cart',color:'#7a5cd6',cat:'grocery',sponsor:'bunmi',perPayment:120,perDay:150,sellers:['Tesco',"Sainsbury's"],expires:new Date(+sod(n0)+150*DAY),status:'active',range:[82,119],freq:0,max:1}, 
+],
  tx:[],audit:[],requests:[],view:'overview',live:false,txFilter:'all',chartMode:'stack',q:'',
 };
 const ag=id=>S.agents.find(a=>a.id===id);
@@ -672,15 +673,10 @@ const ag=id=>S.agents.find(a=>a.id===id);
   add(ag('trip'),'Booking.com',96,at(9,20));
   add(ag('code'),'AWS',45,at(1,15.2),false,'Over per-payment cap (£20)');
   add(ag('research'),'Medium',3,at(0,Math.min(n0.getHours()-.5,11)),false,'Seller not allowed');
-  add(ag('homework'),'Seneca Learning',15,at(0,Math.max(.5,n0.getHours()-.7)),false,'Over per-payment cap (£10)');
   S.tx.sort((a,b)=>a.t-b.t);
   const A=(who,act,target,before,after,t,kind='')=>S.audit.push({who,act,target,before,after,t,kind});
-  A('femi','Created agent','homework','', 'Homework Tutor · £10 per payment',new Date(+n0-26*DAY),'create');
   A('bunmi','Raised daily cap','code','£20','£30',new Date(+n0-6*DAY),'raise');
   A('femi','Added seller','trip','','Booking.com',new Date(+n0-4*DAY),'raise');
-  A('ada','Stopped agent','homework','Active','Paused',new Date(+n0-3*DAY-2*36e5),'stop');
-  A('ada','Resumed agent','homework','Paused','Active',new Date(+n0-3*DAY-1.6*36e5),'');
-  S.requests.push({id:'r1',agent:'homework',by:'ada',field:'perPayment',from:10,to:20,note:'GCSE maths revision bundle is £15. It got declined.',status:'pending',t:new Date(+n0-38*60e3)});
   S.requests.push({id:'r0',agent:'code',by:'bunmi',field:'seller',to:'Anthropic API',note:'Needs API credits for the side project.',status:'approved',decided:'femi',t:new Date(+n0-9*DAY)});
 })();
 
@@ -822,7 +818,7 @@ function cardHTML(a){
     :`<button class="btn primary" data-open="${a.id}">${I('clock')}Renew</button>`;
   return `
   <div class="a-top"><div class="a-ic">${I(a.icon)}</div>
-    <div class="a-name"><b>${esc(a.name)}</b><small>Sponsored by ${mem(a.sponsor).short}</small></div>${status}</div>
+    <div class="a-name"><b>${esc(a.name)}</b><small>Used by ${mem(a.sponsor).short}${a.sponsor==='ada'?' · phone':''}</small></div>${status}</div>
   <div class="a-money"><div><span class="num" data-to="${wk}" data-key="w${a.id}" data-pre="£">£0.00</span><small>spent this week</small></div>${sparkline(a.id,a.color)}</div>
   ${a.status==='paused'?`<div class="paused-note">${I('stop')}Paused by ${mem(a.pausedBy||'femi').short} at ${fmtTime(a.pausedAt||now())}. Payments are blocked.</div>`:
     a.status==='expired'?`<div class="paused-note" style="color:var(--warn)">${I('clock')}Permission ended ${fmtDate(a.expires)}. Payments are blocked.</div>`:
@@ -913,10 +909,10 @@ function alerts(){
 function reqHTML(r){
   const a=ag(r.agent), by=mem(r.by);
   if(r.status!=='pending'){
-    return `<div class="attn-i"><span class="ic" style="background:${r.status==='approved'?'var(--good-soft);color:var(--good)':'var(--bad-soft);color:var(--bad)'}">${I(r.status==='approved'?'check':'x')}</span><div><p><b>${by.short}</b> asked ${r.field==='seller'?`to add <b>${esc(r.to)}</b> to`:`for ${gbpShort(r.to)} per payment on`} ${esc(a.name)}</p><small>${r.status==='approved'?'Approved':'Declined'}${r.granted&&r.granted!==r.to?` at ${gbpShort(r.granted)}`:''} by ${mem(r.decided).short} · ${ago(r.dt||r.t)}</small></div></div>`;
+    return `<div class="attn-i"><span class="ic" style="background:${r.status==='approved'?'var(--good-soft);color:var(--good)':'var(--bad-soft);color:var(--bad)'}">${I(r.status==='approved'?'check':'x')}</span><div><p><b>${by.short}</b> asked ${r.field==='seller'?`to add <b>${esc(r.to)}</b> to`:`for ${gbpShort(r.to)} ${r.field==='perDay'?'per day':'per payment'} on`} ${esc(a.name)}</p><small>${r.status==='approved'?'Approved':'Declined'}${r.granted&&r.granted!==r.to?` at ${gbpShort(r.granted)}`:''} by ${mem(r.decided).short} · ${ago(r.dt||r.t)}</small></div></div>`;
   }
   return `<div class="attn-i"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${I('inbox')}</span><div style="flex:1;min-width:0">
-    <p><b>${by.short}</b> wants <b>${esc(a.name)}</b> to spend up to <b>${gbpShort(r.to)}</b> per payment (now ${gbpShort(r.from)})</p>
+    <p><b>${by.short}</b> wants <b>${esc(a.name)}</b> to spend up to <b>${gbpShort(r.to)}</b> ${r.field==='perDay'?'per day':'per payment'} (now ${gbpShort(r.from)})</p>
     <small>“${esc(r.note)}” · ${ago(r.t)}</small>
     <div class="acts"><span class="req-amt"><span>£</span><input type="number" min="1" id="grant-${r.id}" value="${r.to}" aria-label="Amount to approve"></span>
     <button class="btn good sm" data-approve="${r.id}">Approve</button><button class="btn ghost sm" data-decline="${r.id}">Decline</button></div></div></div>`;
@@ -934,10 +930,12 @@ function renderAttn(){
 function decide(rid,approve){
   const r=S.requests.find(x=>x.id===rid), a=ag(r.agent);
   r.status=approve?'approved':'declined'; r.decided='femi'; r.dt=now();
-  if(approve){const g=Math.max(1,+($('#grant-'+rid)?.value)||r.to); r.granted=g; const old=a.perPayment; a.perPayment=g; if(a.perDay<g){log('femi','Raised daily cap',a.id,gbpShort(a.perDay),gbpShort(g),'raise');a.perDay=g}
-    log('femi','Raised per-payment cap',a.id,gbpShort(old),gbpShort(g),'raise');
-    toast({kind:'ok',title:`${a.name} can now spend ${gbpShort(g)} per payment`,sub:`${mem(r.by).short} has been told.`});
-  } else toast({kind:'info',title:`Request declined`,sub:`${mem(r.by).short} keeps ${gbpShort(a.perPayment)} per payment.`});
+  if(approve){const g=Math.max(1,+($('#grant-'+rid)?.value)||r.to); r.granted=g;
+    if(r.field==='perDay'){const old=a.perDay;a.perDay=g;log('femi','Raised daily cap',a.id,gbpShort(old),gbpShort(g),'raise')}
+    else{const old=a.perPayment; a.perPayment=g; if(a.perDay<g){log('femi','Raised daily cap',a.id,gbpShort(a.perDay),gbpShort(g),'raise');a.perDay=g}
+    log('femi','Raised per-payment cap',a.id,gbpShort(old),gbpShort(g),'raise')}
+    toast({kind:'ok',title:`${a.name} can now spend ${gbpShort(g)} ${r.field==='perDay'?'per day':'per payment'}`,sub:`${mem(r.by).short} sees it on the phone now.`});
+  } else toast({kind:'info',title:`Request declined`,sub:`${mem(r.by).short} keeps the current limit.`});
   render();
 }
 
@@ -946,7 +944,7 @@ const seenTx=new Set();
 function txRow(t){
   const a=ag(t.agent); const fresh=booted&&!seenTx.has(t.id);
   return `<tr class="${fresh?'row-in':''}"><td><span class="who"><i style="background:color-mix(in srgb,${a.color} 18%,transparent);color:${a.color}">${I(a.icon)}</i>${esc(a.name)}</span></td>
-  <td>${esc(t.seller)}</td><td class="num">${gbp(t.amount)}</td>
+  <td>${esc(t.seller)}${t.item?`<div style="color:var(--muted);font-size:12px">${esc(t.item)}${t.via==='phone'?' · bought on phone':''}</div>`:''}</td><td class="num">${gbp(t.amount)}</td>
   <td>${t.ok?`<span class="out ok">${I('check')}Approved</span>`:`<span class="out no">${I('x')}Declined</span>`}</td>
   <td class="reason">${t.ok?'—':esc(t.reason)}</td><td style="color:var(--muted)">${ago(t.t)}</td></tr>`;
 }
@@ -1040,7 +1038,7 @@ function drawDrawer(){
 function drawDrawerLists(){
   if(!D)return; const a=ag(D.id), wk=sow(now());
   const list=S.tx.filter(t=>t.agent===a.id&&t.t>=wk).reverse();
-  const el=$('#drTx'); if(el) el.innerHTML=list.map(t=>`<div class="txi ${t.ok?'':'no'}">${t.ok?`<span class="out ok">${I('check')}</span>`:`<span class="out no">${I('x')}</span>`}<div class="n"><b>${esc(t.seller)}</b><small>${fmtDay(t.t)} ${fmtTime(t.t)}${t.ok?'':' · '+esc(t.reason)}</small></div><span class="num">${gbp(t.amount)}</span></div>`).join('')||'<div class="empty">No payments this week.</div>';
+  const el=$('#drTx'); if(el) el.innerHTML=list.map(t=>`<div class="txi ${t.ok?'':'no'}">${t.ok?`<span class="out ok">${I('check')}</span>`:`<span class="out no">${I('x')}</span>`}<div class="n"><b>${esc(t.item||t.seller)}</b><small>${t.item?esc(t.seller)+' · ':''}${fmtDay(t.t)} ${fmtTime(t.t)}${t.ok?'':' · '+esc(t.reason)}</small></div><span class="num">${gbp(t.amount)}</span></div>`).join('')||'<div class="empty">No payments this week.</div>';
   const au=$('#drAudit'); if(au) au.innerHTML=auditHTML(S.audit.filter(e=>e.target===a.id));
 }
 function diffs(){
@@ -1084,7 +1082,7 @@ function openAdd(){
   M={type:'add',step:1,f:{name:'',purpose:'',icon:'gift',cat:'gifts',sponsor:'femi',perPayment:'',perDay:'',sellers:[],expires:'',color:COLOR_OPTS[0]}};
   M.eoy=isoDate(eoy); drawAdd();
 }
-function demoFill(){Object.assign(M.f,{name:'Gift Finder',purpose:'Birthday and Christmas presents',icon:'gift',cat:'gifts',sponsor:'femi',perPayment:50,perDay:100,sellers:['John Lewis','Etsy'],expires:M.eoy,color:'#c9a21a'});drawAdd()}
+function demoFill(){let e=new Date(2026,9,23);if(e<now())e=new Date(+sod(now())+23*DAY);Object.assign(M.f,{name:'Homework Tutor',purpose:'Revision apps, e-books, practice papers',icon:'book',cat:'education',sponsor:'ada',perPayment:10,perDay:20,sellers:['Revision Hub','PaperStack','Study Books'],expires:isoDate(e),color:'#d4497a'});drawAdd()}
 function drawAdd(){
   const f=M.f, s=M.step, cats=Object.entries(CATALOG);
   const steps=['Who it is','Spend rules','Review'].map((l,i)=>`<div class="${i<s?'done':''}"><i></i>${i+1}. ${l}</div>`).join('');
@@ -1092,9 +1090,9 @@ function drawAdd(){
   if(s===1) body=`<div class="field"><label for="f-name">Agent name</label><input class="inp" id="f-name" value="${esc(f.name)}" placeholder="e.g. Gift Finder"></div>
     <div class="field"><label for="f-purpose">What it buys</label><input class="inp" id="f-purpose" value="${esc(f.purpose)}" placeholder="e.g. Birthday presents for the kids"></div>
     <div class="grid2"><div class="field"><label for="f-cat">Kind of seller</label><select class="sel" id="f-cat">${cats.map(([k,c])=>`<option value="${k}" ${k===f.cat?'selected':''}>${c.label}</option>`).join('')}</select></div>
-    <div class="field"><label for="f-sponsor">Sponsor</label><select class="sel" id="f-sponsor">${MEMBERS.filter(m=>m.role!=='Viewer').map(m=>`<option value="${m.id}" ${m.id===f.sponsor?'selected':''}>${m.name}</option>`).join('')}</select></div></div>
+    <div class="field"><label for="f-sponsor">Who uses it</label><select class="sel" id="f-sponsor">${MEMBERS.filter(m=>m.role!=='Viewer').map(m=>`<option value="${m.id}" ${m.id===f.sponsor?'selected':''}>${m.name}</option>`).join('')}</select></div></div>
     <div class="field"><label>Icon</label><div class="icons" style="--c:${f.color}">${ICON_OPTS.map(ic=>`<button data-icon="${ic}" class="${ic===f.icon?'on':''}" aria-label="${ic}">${I(ic)}</button>`).join('')}</div></div>
-    <button class="demo-link" id="demoFill">${I('zap')}Fill in the demo agent (Gift Finder)</button>`;
+    <button class="demo-link" id="demoFill">${I('zap')}Fill in the demo: Homework Tutor for Teenager</button>`;
   if(s===2){
     const pool=[...new Set([...CATALOG[f.cat].sellers,...f.sellers])];
     body=`<div class="grid2"><div class="field"><label for="f-pp">Max per payment (£)</label><input class="inp num" type="number" min="1" id="f-pp" value="${f.perPayment}" placeholder="50"></div>
@@ -1102,7 +1100,7 @@ function drawAdd(){
     <div class="field"><label>Allowed sellers</label><div class="sellers">${pool.map(x=>`<button class="sel-chip ${f.sellers.includes(x)?'on':''}" data-fseller="${esc(x)}">${I(f.sellers.includes(x)?'check':'plus')}${esc(x)}</button>`).join('')}</div><small>Anything you don’t tick is declined.</small></div>
     <div class="field"><label for="f-exp">Permission ends (required)</label><input class="inp" type="date" id="f-exp" value="${f.expires}"><div class="quick"><button data-fexp="30">+30 days</button><button data-fexp="90">+90 days</button><button data-fexp="eoy">End of year</button></div></div>`;
   }
-  if(s===3) body=`<div class="acard" style="--c:${f.color};pointer-events:none"><div class="a-top"><div class="a-ic">${I(f.icon)}</div><div class="a-name"><b>${esc(f.name)}</b><small>Sponsored by ${mem(f.sponsor).short}</small></div><span class="status active"><i></i>Active</span></div></div>
+  if(s===3) body=`<div class="acard" style="--c:${f.color};pointer-events:none"><div class="a-top"><div class="a-ic">${I(f.icon)}</div><div class="a-name"><b>${esc(f.name)}</b><small>Used by ${mem(f.sponsor).short}</small></div><span class="status active"><i></i>Active</span></div></div>
     <div class="review"><div><span>Buys</span><b>${esc(f.purpose||'—')}</b></div><div><span>Max per payment</span><b class="num">${gbpShort(+f.perPayment)}</b></div><div><span>Max per day</span><b class="num">${gbpShort(+f.perDay)}</b></div><div><span>Allowed sellers</span><b>${f.sellers.map(esc).join(', ')}</b></div><div><span>Permission ends</span><b>${fmtDate(new Date(f.expires+'T00:00'))}</b></div></div>
     <small style="color:var(--muted)">A spend key with exactly these four rules is created. You can Stop it any time.</small>`;
   const valid=s===1?f.name.trim().length>1:s===2?(+f.perPayment>0&&+f.perDay>0&&f.sellers.length&&f.expires):true;
@@ -1160,12 +1158,35 @@ function go(v){
 }
 
 /* ---------- master render ---------- */
+/* ---------- shared store: dashboard + phone stay in sync ---------- */
+const KEY='fw-state-v1', DATE_KEYS=['expires','pausedAt','t','dt'];
+const bc='BroadcastChannel' in window?new BroadcastChannel('fw-sync'):null;
+let lastSaved='';
+const snapshot=()=>JSON.stringify({agents:S.agents,tx:S.tx.map(({fresh,...t})=>t),audit:S.audit,requests:S.requests,roles:MEMBERS.map(m=>m.role)});
+function persist(){const str=snapshot();if(str===lastSaved)return;lastSaved=str;try{localStorage.setItem(KEY,str)}catch(e){}bc&&bc.postMessage({type:'state',str})}
+function applyState(str,remote){
+  const d=JSON.parse(str,(k,v)=>DATE_KEYS.includes(k)&&typeof v==='string'?new Date(v):v);
+  if(remote){
+    const oldTx=new Set(S.tx.map(t=>t.id)), oldReq=new Map(S.requests.map(r=>[r.id,r.status]));
+    d.tx.filter(t=>!oldTx.has(t.id)&&t.via==='phone').forEach(t=>{const a=d.agents.find(x=>x.id===t.agent);toast({kind:t.ok?'ok':'warn',title:t.ok?`Teenager bought ${t.item||'something'} · ${gbp(t.amount)}`:`Teenager’s purchase was declined`,sub:`${a?a.name:''} at ${t.seller}${t.ok?'':' · '+t.reason}`});setTimeout(()=>pingCard(t.agent,t.ok),50)});
+    d.requests.filter(r=>!oldReq.has(r.id)).forEach(r=>toast({kind:'info',title:'New request from Teenager',sub:`Wants ${gbpShort(r.to)} ${r.field==='perDay'?'per day':'per payment'}. Approve it under Needs you.`}));
+    const was=new Map(S.agents.map(a=>[a.id,a.status]));
+    d.agents.forEach(a=>{if(was.get(a.id)==='active'&&a.status==='paused'&&a.pausedBy==='ada')toast({kind:'stop',title:`Teenager stopped ${a.name}`,sub:'From the phone app.'})});
+  }
+  S.agents=d.agents;S.tx=d.tx;S.audit=d.audit;S.requests=d.requests;(d.roles||[]).forEach((r,i)=>MEMBERS[i]&&(MEMBERS[i].role=r));
+  lastSaved=str;
+}
+function onRemote(str){if(!str||str===lastSaved)return;applyState(str,true);Object.keys(cardSig).forEach(k=>delete cardSig[k]);render()}
+bc&&(bc.onmessage=e=>{if(e.data.type==='state')onRemote(e.data.str);if(e.data.type==='reset')location.reload()});
+addEventListener('storage',e=>{if(e.key===KEY){if(e.newValue)onRemote(e.newValue);else location.reload()}});
+function resetDemo(){try{localStorage.removeItem(KEY)}catch(e){}bc&&bc.postMessage({type:'reset'});location.reload()}
+
 function render(){
   refreshExpiry();
   renderKPIs(); renderCards(); renderAttn(); renderTables(); renderMembers(); renderReport();
   if(S.view==='overview') renderChart();
   if(D){ const a=ag(D.id); if(a&&a.status!=='revoked'){const openStatus=$('#drawer .dr-h .status')?.textContent; if(!openStatus||!openStatus.toLowerCase().includes(a.status))drawDrawer(); else drawDrawerLists()} }
-  if(M&&M.type==='sim'&&!M.result){/* keep */}
+  persist();
 }
 
 /* ---------- events ---------- */
@@ -1210,6 +1231,7 @@ document.addEventListener('click',e=>{
   if(t.id==='bellBtn'){go('requests');return}
   if(t.id==='stopAllBtn'||t.id==='mStopAll'){openModal(`<div class="m-h"><div class="a-ic" style="--c:var(--bad)">${I('shield')}</div><h3>Stop every agent?</h3><button class="icon-btn" data-close aria-label="Close">${I('x')}</button></div><div class="m-b"><p style="margin:0;color:var(--fg-2)">All ${liveAgents().filter(a=>a.status==='active').length} active agents will be paused at once. Nothing will be able to spend from the family wallet until you resume them one by one.</p></div><div class="m-f"><button class="btn ghost" data-close>Cancel</button><button class="btn danger" id="confirmStopAll">${I('stop')}Stop all agents</button></div>`);M={type:'confirm'};return}
   if(t.id==='confirmStopAll'){stopAll();return}
+  if(t.id==='resetBtn'){resetDemo();return}
   if(t.id==='liveBtn'){S.live=!S.live;t.classList.toggle('live-on',S.live);t.setAttribute('aria-pressed',S.live);$('#liveTxt').textContent=S.live?'Live':'Paused feed';return}
   if(t.id==='themeBtn'){const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':!matchMedia('(prefers-color-scheme: light)').matches;r.dataset.theme=dark?'light':'dark';return}
   if(d.f){S.txFilter=d.f;$$('#txFilters .fchip').forEach(b=>b.classList.toggle('on',b===t));renderTables();return}
@@ -1259,6 +1281,7 @@ setInterval(()=>{Object.keys(cardSig).forEach(k=>delete cardSig[k]);if(!M)render
 
 /* ---------- boot ---------- */
 hydrateIcons();
+try{const saved=localStorage.getItem(KEY);if(saved)applyState(saved,false)}catch(e){}
 S.tx.forEach(t=>seenTx.add(t.id));
 render(); booted=true;
 })();
