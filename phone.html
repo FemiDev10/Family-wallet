@@ -85,6 +85,30 @@ h2{font-family:var(--display);font-size:17px;margin:4px 2px 0;font-weight:700}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .link{color:var(--accent);font-weight:600;font-size:14px;display:inline-flex;gap:6px;align-items:center;align-self:flex-start}
 
+.pay-head{display:flex;gap:12px;align-items:center}
+.pay-head b{display:block;font-size:16px}.pay-head small{color:var(--muted)}
+.tile.big{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:20px;flex:none}
+.pay-amt{font-family:var(--display);font-size:44px;font-weight:700;letter-spacing:-.02em;text-align:center;line-height:1.1}
+.rcpt{background:var(--sunk);border-radius:16px;padding:2px 14px}
+.rcpt div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.rcpt div:last-child{border-bottom:0}.rcpt span{color:var(--muted)}.rcpt b{font-weight:600;text-align:right}
+.proc{display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px 0 50px;text-align:center}
+.proc small{color:var(--muted)}
+.spin{width:54px;height:54px;border-radius:50%;border:5px solid var(--accent-soft);border-top-color:var(--accent);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.done{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:10px 0 4px}
+.done>b{font-size:20px;font-family:var(--display);margin-top:6px}
+.done small{color:var(--muted);font-size:14px}
+.tick{width:84px;height:84px}
+.tick circle{fill:none;stroke-width:3;stroke-dasharray:151;stroke-dashoffset:151;animation:draw .6s ease forwards}
+.tick path{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:draw .35s .5s ease forwards}
+.done.ok .tick{stroke:var(--good)} .done.ok .tick circle{fill:var(--good-soft);stroke:var(--good)} .done.ok .pay-amt{color:var(--good)}
+.done.no .tick{stroke:var(--stop)} .done.no .tick circle{fill:var(--stop-soft);stroke:var(--stop)}
+.done.ok{animation:popin .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes popin{from{transform:scale(.92);opacity:0}}
+.seen{display:flex;gap:6px;align-items:center;justify-content:center;color:var(--good);font-size:13px;font-weight:600}
+.seen .i{width:15px;height:15px}
 .rep{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--accent);border-radius:18px;padding:12px 14px;text-align:left;animation:in .4s ease}
 .rep .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none}
 .rep .n{flex:1;min-width:0} .rep b{display:block;font-weight:700} .rep small{color:var(--muted);font-size:12.5px}
@@ -375,7 +399,7 @@ function prodHTML(p,key,ok){const c=tileColor(p.seller);return `<div class="prod
 function renderActivity(){
   const el=$('#s-activity'); const ids=new Set(mine().map(a=>a.id));
   const tx=st?st.tx.filter(t=>ids.has(t.agent)).slice().reverse():[];
-  el.innerHTML=`<h2>What I’ve bought</h2>`+(tx.length?`<div class="list">${tx.map(t=>`<div class="li ${t.ok?'':'no'}"><span class="ic ${t.ok?'ok-ic':'no-ic'}">${I(t.ok?'check':'x')}</span><div class="n">${esc(t.item||t.seller)}<small>${esc(t.seller)} · ${ago(t.t)}${t.ok?'':' · '+esc(t.reason)}</small></div><span class="amt num">${gbp(t.amount)}</span></div>`).join('')}</div>`:`<div class="empty"><b>No purchases yet</b><span>Anything you buy shows here, and on ${PA()}’s dashboard.</span></div>`);
+  el.innerHTML=`<h2>What I’ve bought</h2>`+(tx.length?`<div class="list">${tx.map(t=>`<div class="li ${t.ok?'':'no'}"><span class="ic ${t.ok?'ok-ic':'no-ic'}">${I(t.ok?'check':'x')}</span><div class="n">${esc(t.item||t.seller)}<small>${esc(t.seller)} · ${ago(t.t)} · ${t.ok?'Paid':esc(t.reason)}</small></div><span class="amt num">${gbp(t.amount)}</span></div>`).join('')}</div>`:`<div class="empty"><b>No purchases yet</b><span>Anything you buy shows here, and on ${PA()}’s dashboard.</span></div>`);
 }
 function renderAlerts(){
   const el=$('#s-alerts'), al=alerts();
@@ -422,16 +446,36 @@ function notifyDiff(a,b){
 /* ---------- actions ---------- */
 function openSheet(html){sheet=true;$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#sheet').classList.add('on');$('#scrim').classList.add('on')}
 function closeSheet(){sheet=null;$('#sheet').classList.remove('on');$('#scrim').classList.remove('on')}
+let pending=null;
 function buy(i){
   const p=i[0]==='a'?cur.allowed[+i.slice(1)]:cur.others[+i.slice(1)], a=ag(shopAgent); if(!a||!p)return;
-  const r=authorise(a,p.seller,p.price);
-  st.tx.push({id:rid('t'),agent:a.id,seller:p.seller,item:p.item,amount:p.price,ok:r.ok,reason:r.reason,t:new Date(),via:'phone'});
-  save(); render();
-  openSheet(`<h3>${esc(p.item)}</h3><p>${esc(p.seller)} · ${gbp(p.price)} · paying with ${esc(a.name)}</p>
-   <div class="checks">${r.trace.map((c,k)=>`<div class="${c.s==='pass'?'p':c.s==='fail'?'f':'s'}" style="animation-delay:${k*130}ms"><span class="c">${I(c.s==='pass'?'check':c.s==='fail'?'x':'clock')}</span>${esc(c.k)}</div>`).join('')}</div>
-   <div class="verdict ${r.ok?'ok':'no'}" style="animation-delay:${r.trace.length*130}ms"><span class="c">${I(r.ok?'check':'x')}</span><div><b>${r.ok?'Bought':'Declined'}</b><small>${r.ok?`${PA()} can see this on the dashboard. ${gbp(Math.max(0,a.perDay-today(a.id)))} left today.`:esc(r.reason)+'. No money moved.'}</small></div></div>
-   ${r.failedCap&&!pendingReq(a.id)?`<button class="btn pri" data-ask="${a.id}" data-field="${r.failedCap}" data-amt="${Math.ceil(r.failedCap==='perDay'?today(a.id)+p.price:p.price)}">${I('up')}Ask ${PA()} for more</button>`:''}
-   <button class="btn sec" data-close>Done</button>`);
+  pending={p,aid:a.id};
+  const c=tileColor(p.seller);
+  openSheet(`<div class="pay-head"><div class="tile big" style="background:color-mix(in srgb,${c} 14%,transparent);color:${c}">${esc(p.seller[0])}</div><div><b>${esc(p.item)}</b><small>${esc(p.seller)}</small></div></div>
+   <div class="pay-amt num">${gbp(p.price)}</div>
+   <div class="rcpt"><div><span>Pay with</span><b>${esc(a.name)}</b></div><div><span>Left today</span><b class="num">${gbp(Math.max(0,a.perDay-today(a.id)))}</b></div></div>
+   <button class="btn pri paybtn" id="payNow">${I('lock')}Pay ${gbp(p.price)}</button><button class="btn sec" data-close>Cancel</button>`);
+}
+function payNow(){
+  if(!pending)return; const {p,aid}=pending; pending=null;
+  $('#sheet').innerHTML='<div class="grab"></div><div class="proc"><span class="spin"></span><b>Processing payment…</b><small>Checking with the family wallet</small></div>';
+  setTimeout(()=>{
+    const a=ag(aid); if(!a){closeSheet();return}
+    const r=authorise(a,p.seller,p.price), ref='FW-'+Math.random().toString(36).slice(2,8).toUpperCase(), when=new Date();
+    st.tx.push({id:rid('t'),agent:a.id,seller:p.seller,item:p.item,amount:p.price,ok:r.ok,reason:r.reason,t:when,via:'phone',ref});
+    save(); render();
+    if(r.ok){
+      $('#sheet').innerHTML=`<div class="grab"></div><div class="done ok"><svg class="tick" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="m15 27 7 7 15-16"/></svg>
+       <b>Payment successful</b><div class="pay-amt num">${gbp(p.price)}</div><small>debited from ${esc(a.name)}</small></div>
+       <div class="rcpt"><div><span>Paid to</span><b>${esc(p.seller)}</b></div><div><span>Item</span><b>${esc(p.item)}</b></div><div><span>Time</span><b>${fmtTime(when)}</b></div><div><span>Reference</span><b class="num">${ref}</b></div><div><span>Left today</span><b class="num">${gbp(Math.max(0,a.perDay-today(a.id)))}</b></div></div>
+       <small class="seen">${I('check')} ${esc(PA())} can see this payment</small>
+       <button class="btn pri" data-close>Done</button>`;
+    }else{
+      const ask=r.failedCap&&!pendingReq(a.id)?`<button class="btn pri" data-ask="${a.id}" data-field="${r.failedCap}" data-amt="${Math.ceil(r.failedCap==='perDay'?today(a.id)+p.price:p.price)}">${I('up')}Ask ${esc(PA())} for more</button>`:'';
+      $('#sheet').innerHTML=`<div class="grab"></div><div class="done no"><svg class="tick" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="m18 18 16 16M34 18 18 34"/></svg>
+       <b>Payment declined</b><div class="pay-amt num">${gbp(p.price)}</div><small>${esc(r.reason)}. No money was taken.</small></div>${ask}<button class="btn sec" data-close>Close</button>`;
+    }
+  },1300);
 }
 let ask=null;
 function openAsk(aid,field='perPayment',amt){
@@ -483,6 +527,7 @@ document.addEventListener('click',e=>{
   if(d.nacat){na.name=$('#naName').value;na.purpose=$('#naPurpose').value;na.cat=d.nacat;drawNewAgent();return}
   if(d.nastep){na[d.nastep]=Math.max(5,na[d.nastep]+(+d.d));t.parentElement.querySelector('.v').textContent='£'+na[d.nastep];return}
   if(t.id==='naSend'){sendNewAgent();return}
+  if(t.id==='payNow'){payNow();return}
   if(d.tab){tab=d.tab;render();$('#body').scrollTop=0;return}
   if(t.id==='bellBtn'){tab='alerts';render();return}
   if(d.goshop){shopAgent=d.goshop;tab='shop';render();return}

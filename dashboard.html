@@ -987,7 +987,7 @@ function txRow(t){
   const a=ag(t.agent); const fresh=booted&&!seenTx.has(t.id);
   return `<tr class="${fresh?'row-in':''}"><td><span class="who"><i style="background:color-mix(in srgb,${a.color} 18%,transparent);color:${a.color}">${I(a.icon)}</i>${esc(a.name)}</span></td>
   <td>${esc(t.seller)}${t.item?`<div style="color:var(--muted);font-size:12px">${esc(t.item)}${t.via==='phone'?' · bought on phone':''}</div>`:''}</td><td class="num">${gbp(t.amount)}</td>
-  <td>${t.ok?`<span class="out ok">${I('check')}Approved</span>`:`<span class="out no">${I('x')}Declined</span>`}</td>
+  <td>${t.ok?`<span class="out ok">${I('check')}Paid</span>`:`<span class="out no">${I('x')}Declined</span>`}</td>
   <td class="reason">${t.ok?'—':esc(t.reason)}</td><td style="color:var(--muted)">${ago(t.t)}</td></tr>`;
 }
 function renderTables(){
@@ -1277,7 +1277,7 @@ function applyState(str,remote){
   const d=JSON.parse(str,(k,v)=>DATE_KEYS.includes(k)&&typeof v==='string'?new Date(v):v);
   if(remote){
     const oldTx=new Set(S.tx.map(t=>t.id)), oldReq=new Map(S.requests.map(r=>[r.id,r.status]));
-    d.tx.filter(t=>!oldTx.has(t.id)&&t.via==='phone').forEach(t=>{const a=d.agents.find(x=>x.id===t.agent);toast({kind:t.ok?'ok':'warn',title:t.ok?`David bought ${t.item||'something'} · ${gbp(t.amount)}`:`David’s purchase was declined`,sub:`${a?a.name:''} at ${t.seller}${t.ok?'':' · '+t.reason}`});setTimeout(()=>pingCard(t.agent,t.ok),50)});
+    d.tx.filter(t=>!oldTx.has(t.id)&&t.via==='phone').forEach(t=>{const a=d.agents.find(x=>x.id===t.agent);toast({kind:t.ok?'ok':'warn',title:t.ok?`${mem('ada').short} paid ${gbp(t.amount)} for ${t.item||'something'}`:`David’s purchase was declined`,sub:`${a?a.name:''} at ${t.seller}${t.ok?'':' · '+t.reason}`});setTimeout(()=>pingCard(t.agent,t.ok),50)});
     d.requests.filter(r=>!oldReq.has(r.id)).forEach(r=>toast({kind:'info',title:`New request from ${mem(r.by).short}`,sub:r.field==='newAgent'?`Wants a new agent: ${r.proposal.name}.`:`Wants ${gbpShort(r.to)} ${r.field==='perDay'?'per day':'per payment'}. Approve it under Needs you.`}));
     const was=new Map(S.agents.map(a=>[a.id,a.status]));
     d.agents.forEach(a=>{if(was.get(a.id)==='active'&&a.status==='paused'&&a.pausedBy==='ada')toast({kind:'stop',title:`David stopped ${a.name}`,sub:'From the phone app.'})});
