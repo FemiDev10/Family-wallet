@@ -930,7 +930,16 @@ function alerts(){
   return out;
 }
 function reqHTML(r){
-  const a=ag(r.agent), by=mem(r.by);
+  const by=mem(r.by);
+  if(r.field==='newAgent'){
+    const p=r.proposal, shops=p.anySeller?'any shop':(CATALOG[p.cat]?CATALOG[p.cat].label.toLowerCase()+' shops':p.sellers.join(', '));
+    if(r.status!=='pending')return `<div class="attn-i"><span class="ic" style="background:${r.status==='approved'?'var(--good-soft);color:var(--good)':'var(--bad-soft);color:var(--bad)'}">${I(r.status==='approved'?'check':'x')}</span><div><p><b>${esc(by.short)}</b> asked for a new agent, <b>${esc(p.name)}</b></p><small>${r.status==='approved'?'Approved':'Declined'} by ${esc(mem(r.decided).short)} · ${ago(r.dt||r.t)}</small></div></div>`;
+    return `<div class="attn-i"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${I('plus')}</span><div style="flex:1;min-width:0">
+      <p><b>${esc(by.short)}</b> wants a new agent: <b>${esc(p.name)}</b></p>
+      <small>${esc(p.purpose)} · asks for ${gbpShort(p.perPayment)} per payment, ${gbpShort(p.perDay)} per day at ${esc(shops)}${r.note?` · “${esc(r.note)}”`:''} · ${ago(r.t)}</small>
+      <div class="acts"><button class="btn good sm" data-approve="${r.id}">Approve as asked</button><button class="btn ghost sm" data-editreq="${r.id}">Change limits first</button><button class="btn ghost sm" data-decline="${r.id}">Decline</button></div></div></div>`;
+  }
+  const a=ag(r.agent)||{name:'an agent'};
   if(r.status!=='pending'){
     return `<div class="attn-i"><span class="ic" style="background:${r.status==='approved'?'var(--good-soft);color:var(--good)':'var(--bad-soft);color:var(--bad)'}">${I(r.status==='approved'?'check':'x')}</span><div><p><b>${by.short}</b> asked ${r.field==='seller'?`to add <b>${esc(r.to)}</b> to`:`for ${gbpShort(r.to)} ${r.field==='perDay'?'per day':'per payment'} on`} ${esc(a.name)}</p><small>${r.status==='approved'?'Approved':'Declined'}${r.granted&&r.granted!==r.to?` at ${gbpShort(r.granted)}`:''} by ${mem(r.decided).short} · ${ago(r.dt||r.t)}</small></div></div>`;
   }
@@ -950,8 +959,14 @@ function renderAttn(){
   $('#reqPending').innerHTML=pend.map(reqHTML).join('')||'<div class="empty">No requests waiting.</div>';
   $('#reqDone').innerHTML=S.requests.filter(r=>r.status!=='pending').slice().reverse().map(reqHTML).join('')||'<div class="empty">Nothing decided yet.</div>';
 }
+function proposalForm(r){const p=r.proposal;let e=new Date(+sod(now())+30*DAY);return{name:p.name,purpose:p.purpose,icon:p.icon||'gift',cat:p.cat,sponsor:r.by,perPayment:p.perPayment,perDay:p.perDay,sellers:[...(p.sellers||[])],anySeller:!!p.anySeller,expires:isoDate(e),color:COLOR_OPTS[S.agents.length%COLOR_OPTS.length]}}
 function decide(rid,approve){
   const r=S.requests.find(x=>x.id===rid), a=ag(r.agent);
+  if(r.field==='newAgent'){
+    if(approve){openAdd();Object.assign(M.f,proposalForm(r));M.fromReq=rid;createAgent();toast({kind:'ok',title:`Approved. ${r.proposal.name} is on ${mem(r.by).short}’s phone`,sub:'Ends in 30 days. Change it any time under Limits.'})}
+    else{r.status='declined';r.decided='femi';r.dt=now();log('femi','Declined new agent','',r.proposal.name,'Declined','');render();toast({kind:'info',title:'Request declined',sub:`${mem(r.by).short} has been told.`})}
+    return;
+  }
   r.status=approve?'approved':'declined'; r.decided='femi'; r.dt=now();
   if(approve){const g=Math.max(1,+($('#grant-'+rid)?.value)||r.to); r.granted=g;
     if(r.field==='perDay'){const old=a.perDay;a.perDay=g;log('femi','Raised daily cap',a.id,gbpShort(old),gbpShort(g),'raise')}
@@ -1094,7 +1109,7 @@ function ruleMoney(key,label,sub,max){
   return `<div class="rule"><div class="rule-h"><div><b>${label}</b><small>${sub}</small></div>
   <div class="stepper"><button data-step="${key}" data-d="-1" aria-label="Lower">−</button><label>£<input type="number" min="1" id="in-${key}" data-in="${key}" value="${v}"></label><button data-step="${key}" data-d="1" aria-label="Raise">+</button></div></div>
   <input type="range" min="1" max="${max}" step="1" id="rg-${key}" data-rg="${key}" value="${Math.min(v,max)}" style="--p:${Math.min(v,max)/max*100}%" aria-label="${label}">
-  <div class="quick">${[-10,-5,5,10,50].map(q=>`<button data-bump="${key}" data-d="${q}">${q>0?'+':''}£${Math.abs(q)}</button>`).join('')}</div></div>`;
+  <div class="quick">${[-10,-5,5,10,50].map(q=>`<button data-bump="${key}" data-d="${q}">${q>0?'+':'−'}£${Math.abs(q)}</button>`).join('')}</div></div>`;
 }
 function drawDrawer(){
   if(!D)return; const a=ag(D.id), dr=$('#drawer');
@@ -1198,9 +1213,10 @@ function drawAdd(){
     <div class="m-f">${s>1?'<button class="btn ghost" id="mBack">Back</button>':''}<div class="sp"></div><button class="btn primary" id="mNext" ${valid?'':'disabled'}>${s===3?I('check')+'Create agent':'Continue'}</button></div>`);
 }
 function createAgent(){
-  const f=M.f, aid='a'+(uid++);
+  const f=M.f, aid=id('a');
   S.agents.push({id:aid,name:f.name.trim(),purpose:f.purpose.trim()||'—',icon:f.icon,color:f.color,cat:f.cat,sponsor:f.sponsor,perPayment:+f.perPayment,perDay:+f.perDay,sellers:[...f.sellers],anySeller:!!f.anySeller,expires:new Date(f.expires+'T23:59'),status:'active',born:true});
   log('femi','Created agent',aid,'',`${f.name} · ${gbpShort(+f.perPayment)} per payment, ${gbpShort(+f.perDay)} per day`,'create');
+  if(M.fromReq){const rq=S.requests.find(x=>x.id===M.fromReq);if(rq){rq.status='approved';rq.decided='femi';rq.dt=now();rq.agent=aid;rq.granted=+f.perPayment}}
   closeModal(); go('overview'); render();
   toast({kind:'ok',title:`${f.name} can now spend`,sub:`Up to ${gbpShort(+f.perDay)} a day ${f.anySeller?' at any seller':` at ${f.sellers.length} seller${f.sellers.length===1?'':'s'}`}.`});
   setTimeout(()=>$(`.acard[data-id="${aid}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),120);
@@ -1258,7 +1274,7 @@ function applyState(str,remote){
   if(remote){
     const oldTx=new Set(S.tx.map(t=>t.id)), oldReq=new Map(S.requests.map(r=>[r.id,r.status]));
     d.tx.filter(t=>!oldTx.has(t.id)&&t.via==='phone').forEach(t=>{const a=d.agents.find(x=>x.id===t.agent);toast({kind:t.ok?'ok':'warn',title:t.ok?`David bought ${t.item||'something'} · ${gbp(t.amount)}`:`David’s purchase was declined`,sub:`${a?a.name:''} at ${t.seller}${t.ok?'':' · '+t.reason}`});setTimeout(()=>pingCard(t.agent,t.ok),50)});
-    d.requests.filter(r=>!oldReq.has(r.id)).forEach(r=>toast({kind:'info',title:'New request from David',sub:`Wants ${gbpShort(r.to)} ${r.field==='perDay'?'per day':'per payment'}. Approve it under Needs you.`}));
+    d.requests.filter(r=>!oldReq.has(r.id)).forEach(r=>toast({kind:'info',title:`New request from ${mem(r.by).short}`,sub:r.field==='newAgent'?`Wants a new agent: ${r.proposal.name}.`:`Wants ${gbpShort(r.to)} ${r.field==='perDay'?'per day':'per payment'}. Approve it under Needs you.`}));
     const was=new Map(S.agents.map(a=>[a.id,a.status]));
     d.agents.forEach(a=>{if(was.get(a.id)==='active'&&a.status==='paused'&&a.pausedBy==='ada')toast({kind:'stop',title:`David stopped ${a.name}`,sub:'From the phone app.'})});
   }
@@ -1307,6 +1323,7 @@ document.addEventListener('click',e=>{
   if(d.open){if(M)closeModal();openDrawer(d.open);return}
   if(d.approve){decide(d.approve,true);return}
   if(d.decline){decide(d.decline,false);return}
+  if(d.editreq){const r=S.requests.find(x=>x.id===d.editreq);openAdd();Object.assign(M.f,proposalForm(r));M.fromReq=r.id;M.step=2;drawAdd();return}
   if(d.close!==undefined){closeModal();return}
   if(d.scroll==='attn'){$('#attn').scrollIntoView({behavior:'smooth',block:'center'});return}
   // drawer

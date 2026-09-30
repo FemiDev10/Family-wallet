@@ -232,7 +232,8 @@ function alerts(){
   if(!st)return[];
   const ids=new Set(st.agents.filter(a=>a.sponsor===ME).map(a=>a.id));
   const out=st.audit.filter(e=>ids.has(e.target)&&e.who!==ME).map(e=>({t:e.t,kind:e.kind||'info',title:auditText(e),sub:e.before||e.after?`${e.before?e.before+' → ':''}${e.after||''}`:''}));
-  st.requests.filter(r=>ids.has(r.agent)&&r.status!=='pending'&&r.by===ME).forEach(r=>out.push({t:r.dt||r.t,kind:r.status==='approved'?'create':'stop',title:r.status==='approved'?`${PA()} approved your request${r.granted&&r.granted!==r.to?` at ${gbpS(r.granted)}`:''}`:'${PA()} declined your request',sub:`You asked for ${gbpS(r.to)} ${r.field==='perDay'?'per day':'per payment'}`}));
+  st.requests.filter(r=>r.field==='newAgent'&&r.by===ME&&r.status!=='pending').forEach(r=>out.push({t:r.dt||r.t,kind:r.status==='approved'?'create':'stop',title:r.status==='approved'?`${PA()} approved your new agent ${r.proposal.name}`:`${PA()} declined your request for ${r.proposal.name}`,sub:''}));
+  st.requests.filter(r=>r.field!=='newAgent'&&ids.has(r.agent)&&r.status!=='pending'&&r.by===ME).forEach(r=>out.push({t:r.dt||r.t,kind:r.status==='approved'?'create':'stop',title:r.status==='approved'?`${PA()} approved your request${r.granted&&r.granted!==r.to?` at ${gbpS(r.granted)}`:''}`:'${PA()} declined your request',sub:`You asked for ${gbpS(r.to)} ${r.field==='perDay'?'per day':'per payment'}`}));
   if(seesReport()&&st.reportSent&&st.reportSent.to.includes(ME))out.push({t:st.reportSent.t,kind:'info',title:`${PA()} sent you the weekly report`,sub:'Open it from Home'});
   return out.sort((a,b)=>b.t-a.t);
 }
@@ -319,10 +320,14 @@ function render(){
   renderHome(); renderShop(); renderActivity(); renderAlerts();
 }
 function statusPill(a){return a.status==='active'?'<span class="pill active"><i></i>On</span>':a.status==='paused'?'<span class="pill paused"><i></i>Paused</span>':'<span class="pill expired"><i></i>Expired</span>'}
+function newAgentBlock(){
+  const pend=st?st.requests.filter(r=>r.by===ME&&r.field==='newAgent'&&r.status==='pending'):[];
+  return pend.map(r=>`<div class="note w">${I('clock')}<span>You asked for <b>${esc(r.proposal.name)}</b> (${gbpS(r.proposal.perPayment)} per payment). Waiting for ${esc(PA())}.</span></div>`).join('')+`<button class="btn sec" id="newAgentBtn">${I('plus')}Ask for a new agent</button>`;
+}
 function renderHome(){
   const el=$('#s-home');
   if(!st||!mine().length){
-    el.innerHTML=reportCard()+`<h2>My agents</h2><div class="empty"><div class="circ">${I('inbox')}</div><b>No agents yet</b><span>When ${PA()} gives you an AI agent on the dashboard, it appears here with its budget.</span><span class="waiting"><i></i>Waiting for ${PA()}</span></div>`;
+    el.innerHTML=reportCard()+`<h2>My agents</h2><div class="empty"><div class="circ">${I('inbox')}</div><b>No agents yet</b><span>When ${PA()} gives you an AI agent on the dashboard, it appears here with its budget.</span><span class="waiting"><i></i>Waiting for ${PA()}</span></div>`+newAgentBlock();
     return;
   }
   el.innerHTML=reportCard()+`<h2>My agents</h2>`+mine().map(a=>{
@@ -348,7 +353,7 @@ function renderHome(){
           a.status==='paused'&&!pausedByAdmin?`<button class="btn good" data-resume="${a.id}">${I('play')}Resume</button>`:''}
       </div>
       ${!pr&&a.status!=='expired'?`<button class="link" data-ask="${a.id}">${I('up')}Request more</button>`:''}
-    </article>`}).join('');
+    </article>`}).join('')+newAgentBlock();
   el.querySelectorAll('.bar i').forEach(b=>{const id=b.closest('[data-card]').dataset.card;requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.width=b.dataset.w+'%'));prevBar[id]=+b.dataset.w});
   el.querySelectorAll('[data-card]').forEach(c=>{if(newAgents.has(c.dataset.card)){c.classList.add('new');newAgents.delete(c.dataset.card)}});
 }
@@ -408,6 +413,7 @@ function notifyDiff(a,b){
   if(om&&nmm&&om.role!==nmm.role)banner(`Your role is now ${nmm.role}`,`Changed by ${PA()}.`,'info');
   const pr=new Map(a.requests.map(r=>[r.id,r.status]));
   b.requests.filter(r=>r.by===ME&&pr.get(r.id)==='pending'&&r.status!=='pending').forEach(r=>{
+    if(r.field==='newAgent'){if(r.status!=='approved')banner('Request declined',`${PA()} said no to ${r.proposal.name}.`,'no');return}
     if(r.status==='approved')banner('Request approved',`${PA()} gave you ${gbpS(r.granted||r.to)} ${r.field==='perDay'?'per day':'per payment'}.`,'ok');
     else banner('Request declined',`${PA()} kept your limits the same.`,'no');
   });
@@ -441,6 +447,27 @@ function drawAsk(){
    <input class="inp" id="askNote" placeholder="Why? e.g. The maths bundle is £15" value="">
    <button class="btn pri" id="sendAsk">${I('up')}Send to ${PA()}</button><button class="btn sec" data-close>Cancel</button>`);
 }
+const CATS={education:['Study shops',['Revision Hub','PaperStack','Study Books'],'book'],gifts:['Gifts',['John Lewis','Etsy','Not On The High Street'],'gift'],grocery:['Groceries',['Tesco',"Sainsbury's",'Ocado'],'cart'],travel:['Travel',['LNER','Trainline','British Airways','Booking.com','Enterprise'],'plane'],games:['Games',['Game Store'],'megaphone'],research:['Research',['FT.com','Nature','JSTOR','Statista API','Perplexity API'],'search']};
+let na=null;
+function openNewAgent(){na={name:'',purpose:'',cat:'gifts',pp:20,pd:40};drawNewAgent()}
+function drawNewAgent(){
+  openSheet(`<h3>Ask for a new agent</h3><p>${esc(PA())} sees this on the dashboard and decides the limits.</p>
+   <input class="inp" id="naName" placeholder="Name, e.g. Gift Finder" value="${esc(na.name)}" aria-label="Agent name">
+   <input class="inp" id="naPurpose" placeholder="What it buys, e.g. Birthday presents for friends" value="${esc(na.purpose)}" aria-label="What it buys">
+   <p style="color:var(--ink);font-weight:600">Where it would shop</p>
+   <div class="chips" style="flex-wrap:wrap">${Object.entries(CATS).map(([k,c])=>`<button class="chip ${na.cat===k?'on':''}" data-nacat="${k}">${c[0]}</button>`).join('')}</div>
+   <div class="row"><div style="flex:1;text-align:center"><p>Per payment</p><div class="stepper"><button data-nastep="pp" data-d="-5">−</button><span class="v num" style="font-size:26px;min-width:70px">£${na.pp}</span><button data-nastep="pp" data-d="5">+</button></div></div>
+   <div style="flex:1;text-align:center"><p>Per day</p><div class="stepper"><button data-nastep="pd" data-d="-5">−</button><span class="v num" style="font-size:26px;min-width:70px">£${na.pd}</span><button data-nastep="pd" data-d="5">+</button></div></div></div>
+   <input class="inp" id="naNote" placeholder="Why? e.g. Mia’s birthday is next week" aria-label="Why">
+   <button class="btn pri" id="naSend">${I('up')}Send to ${esc(PA())}</button><button class="btn sec" data-close>Cancel</button>`);
+}
+function sendNewAgent(){
+  na.name=$('#naName').value.trim();na.purpose=$('#naPurpose').value.trim();
+  if(na.name.length<2){$('#naName').focus();$('#naName').style.borderColor='var(--stop)';return}
+  const c=CATS[na.cat];
+  st.requests.push({id:rid('r'),agent:null,by:ME,field:'newAgent',proposal:{name:na.name,purpose:na.purpose||'Things I need',cat:na.cat,icon:c[2],sellers:c[1],perPayment:na.pp,perDay:Math.max(na.pd,na.pp)},note:$('#naNote').value.trim(),status:'pending',t:new Date()});
+  save();closeSheet();render();banner('Request sent',`${PA()} will see “${na.name}” on the dashboard.`,'up');
+}
 function sendAsk(){
   const a=ag(ask.aid), cur=ask.field==='perDay'?a.perDay:a.perPayment;
   st.requests.push({id:rid('r'),agent:a.id,by:ME,field:ask.field,from:cur,to:ask.amt,note:$('#askNote').value.trim()||'Need a bit more for revision.',status:'pending',t:new Date()});
@@ -452,6 +479,10 @@ function resumeMine(aid){const a=ag(aid);if(a.expires<new Date())return;a.status
 document.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;const d=t.dataset;
   if(d.report){openReport();return}
+  if(t.id==='newAgentBtn'){openNewAgent();return}
+  if(d.nacat){na.name=$('#naName').value;na.purpose=$('#naPurpose').value;na.cat=d.nacat;drawNewAgent();return}
+  if(d.nastep){na[d.nastep]=Math.max(5,na[d.nastep]+(+d.d));t.parentElement.querySelector('.v').textContent='£'+na[d.nastep];return}
+  if(t.id==='naSend'){sendNewAgent();return}
   if(d.tab){tab=d.tab;render();$('#body').scrollTop=0;return}
   if(t.id==='bellBtn'){tab='alerts';render();return}
   if(d.goshop){shopAgent=d.goshop;tab='shop';render();return}
