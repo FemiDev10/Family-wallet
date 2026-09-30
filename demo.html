@@ -35,7 +35,7 @@ main{flex:1;min-height:0;display:flex;gap:18px;padding-bottom:16px}
 </style>
 <div class="wrap">
   <header>
-    <h1>Family wallet<span>Parent A’s dashboard + Teenager’s phone</span></h1>
+    <h1>Family wallet<span>Parent A’s dashboard + David’s phone</span></h1>
     <div class="steps" aria-label="Demo script">
       <span class="step"><b>1</b>Dashboard: Add agent → Homework Tutor</span>
       <span class="step"><b>2</b>Phone: buy the £15 bundle → declined</span>
@@ -48,11 +48,14 @@ main{flex:1;min-height:0;display:flex;gap:18px;padding-bottom:16px}
   </header>
   <main>
     <section class="pane dash"><label>Admin dashboard · Parent A</label><iframe id="fDash" src="dashboard.html" title="Admin dashboard"></iframe></section>
-    <section class="pane ph"><label>Phone app · Teenager</label><div class="bezel"><iframe id="fPhone" src="phone.html" title="Teenager phone app"></iframe></div></section>
+    <section class="pane ph"><label>Phone app · David</label><div class="bezel"><iframe id="fPhone" src="phone.html" title="David phone app"></iframe></div></section>
   </main>
 </div>
 <script>
-document.getElementById('reset').onclick=()=>{
+const frames=()=>[document.getElementById('fDash'),document.getElementById('fPhone')];
+addEventListener('message',e=>{const d=e.data;if(!d||!d.fw)return;frames().forEach(f=>{if(f.contentWindow!==e.source)try{f.contentWindow.postMessage(d,'*')}catch(x){}})});
+document.getElementById('reset').onclick=async()=>{
+  try{await fetch('api/reset',{method:'POST'})}catch(e){}
   try{localStorage.removeItem('fw-state-v1')}catch(e){}
   const d=document.getElementById('fDash'),p=document.getElementById('fPhone');
   d.src='dashboard.html';setTimeout(()=>{p.src='phone.html'},600);

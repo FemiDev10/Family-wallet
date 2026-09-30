@@ -164,7 +164,7 @@ h2{font-family:var(--display);font-size:17px;margin:4px 2px 0;font-weight:700}
 </head><body>
 <div class="stage"><div class="phone" id="phone">
   <div class="sbar"><span id="clock">9:41</span><span class="ic"><svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/><rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/><rect x="10" y="2" width="3" height="10" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor" opacity=".35"/></svg><svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".4"/></svg></span></div>
-  <div class="hdr"><div class="av">T</div><div><b>Hi, Teenager</b><small>Family wallet · set up by Parent A</small></div><div class="sp"></div><button class="bell" id="bellBtn" aria-label="Alerts"></button></div>
+  <div class="hdr"><div class="av">D</div><div><b>Hi, David</b><small>Family wallet · set up by Parent A</small></div><div class="sp"></div><button class="bell" id="bellBtn" aria-label="Alerts"></button></div>
   <div class="body" id="body">
     <section class="screen on" id="s-home"></section>
     <section class="screen" id="s-shop"></section>
@@ -204,10 +204,10 @@ const bc='BroadcastChannel' in window?new BroadcastChannel('fw-sync'):null;
 let st=null, lastSaved='', tab='home', shopAgent=null, sheet=null, seenAlerts=0, booted=false;
 const parse=str=>JSON.parse(str,(k,v)=>DATE_KEYS.includes(k)&&typeof v==='string'?new Date(v):v);
 function load(){try{const s=localStorage.getItem(KEY);if(s){st=parse(s);lastSaved=s}else st=null}catch(e){st=null}}
-function save(){const s=JSON.stringify(st);lastSaved=s;try{localStorage.setItem(KEY,s)}catch(e){}bc&&bc.postMessage({type:'state',str:s})}
+function save(){const s=JSON.stringify(st);lastSaved=s;sendOut(s);try{localStorage.setItem(KEY,s)}catch(e){}bc&&bc.postMessage({type:'state',str:s})}
 function onRemote(str){
   if(!str||str===lastSaved)return;
-  const prev=st; st=parse(str); lastSaved=str;
+  const prev=st; st=parse(str); lastSaved=str;try{localStorage.setItem(KEY,str)}catch(e){}
   if(prev) notifyDiff(prev,st);
   render();
 }
@@ -248,13 +248,25 @@ function authorise(a,seller,amount){
 
 /* ---------- shop catalogue ---------- */
 const PRODUCTS=[
-  {item:'GCSE Maths revision bundle',seller:'Revision Hub',price:15,tile:'R',c:'#3F51D8'},
-  {item:'Chemistry past papers pack',seller:'PaperStack',price:6,tile:'P',c:'#1E8A58'},
-  {item:'An Inspector Calls e-book',seller:'Study Books',price:4.99,tile:'S',c:'#B83266'},
-  {item:'Flashcards app, 1 month',seller:'Revision Hub',price:3.5,tile:'R',c:'#3F51D8'},
-  {item:'Physics practice set',seller:'PaperStack',price:9,tile:'P',c:'#1E8A58'},
-  {item:'Street Racer 5',seller:'Game Store',price:24.99,tile:'G',c:'#A86300'},
-];
+  ['GCSE Maths revision bundle','Revision Hub',15],['Flashcards app, 1 month','Revision Hub',3.5],
+  ['Chemistry past papers pack','PaperStack',6],['Physics practice set','PaperStack',9],
+  ['An Inspector Calls e-book','Study Books',4.99],['Macbeth study guide','Study Books',6.5],
+  ['Street Racer 5','Game Store',24.99],
+  ['Wireless headphones','John Lewis',45],['Handmade birthday card','Etsy',3.5],['Personalised mug','Not On The High Street',12],
+  ['Snacks for the week','Tesco',8.5],['Meal deal','Sainsbury\'s',3.95],['Weekly shop','Ocado',30],
+  ['Train to York','LNER',34],['Train to London','Trainline',28],['Flight to Lisbon','British Airways',120],['Hotel, 1 night','Booking.com',89],['Car hire, 1 day','Enterprise',45],
+  ['FT article','FT.com',2.5],['Nature paper','Nature',5],['JSTOR article','JSTOR',4],['Market report','Statista API',4.5],['Search credits','Perplexity API',3],
+  ['Server hosting','AWS',12],['Website hosting','Vercel',16],['AI API credits','Anthropic API',10],['Code hosting','GitHub',4],
+].map(([item,seller,price])=>({item,seller,price}));
+const TILE_COLORS=['#3F51D8','#1E8A58','#B83266','#A86300','#7a5cd6','#0e7c8c'];
+const tileColor=s=>TILE_COLORS[[...s].reduce((h,c)=>h+c.charCodeAt(0),0)%TILE_COLORS.length];
+function shopFor(a){
+  const allowed=PRODUCTS.filter(p=>a.sellers.includes(p.seller));
+  a.sellers.filter(x=>!PRODUCTS.some(p=>p.seller===x)).forEach(x=>allowed.push({item:'Order from '+x,seller:x,price:Math.min(a.perPayment,8)}));
+  const others=PRODUCTS.filter(p=>!a.sellers.includes(p.seller));
+  const pickOthers=[others.find(p=>p.seller==='Game Store'),...others.filter(p=>p.seller!=='Game Store').slice(0,2)].filter(Boolean);
+  return {allowed,others:pickOthers};
+}
 
 /* ---------- render ---------- */
 const prevBar={};
@@ -305,12 +317,17 @@ function renderShop(){
   const el=$('#s-shop'), my=mine();
   if(!my.length){el.innerHTML=`<h2>Shop</h2><div class="empty"><div class="circ">${I('bag')}</div><b>Nothing to pay with yet</b><span>You need an agent from Parent A before you can buy.</span></div>`;return}
   if(!shopAgent||!my.find(a=>a.id===shopAgent))shopAgent=my[0].id;
-  const a=ag(shopAgent);
+  const a=ag(shopAgent); cur=shopFor(a);
   el.innerHTML=`<h2>Shop</h2>
    ${my.length>1?`<div class="chips">${my.map(x=>`<button class="chip ${x.id===shopAgent?'on':''}" data-pick="${x.id}">${esc(x.name)}</button>`).join('')}</div>`:''}
    <div class="note ${a.status==='active'?'w':'p'}">${I(a.status==='active'?'bag':'pause')}<span>${a.status==='active'?`Paying with <b>${esc(a.name)}</b>. ${gbp(Math.max(0,a.perDay-today(a.id)))} left today, up to ${gbpS(a.perPayment)} a payment.`:`${esc(a.name)} is ${a.status}. Purchases will be declined.`}</span></div>
-   ${PRODUCTS.map((p,i)=>`<div class="prod"><div class="tile" style="background:color-mix(in srgb,${p.c} 14%,transparent);color:${p.c}">${p.tile}</div><div class="n"><b>${esc(p.item)}</b><small>${esc(p.seller)}${a.sellers.includes(p.seller)?'':' · not an allowed shop'}</small></div><button class="buy num" data-buy="${i}">${gbp(p.price)}</button></div>`).join('')}`;
+   <h2 style="font-size:14px;color:var(--muted);font-family:var(--body);font-weight:600">From your allowed shops</h2>
+   ${cur.allowed.map((p,i)=>prodHTML(p,'a'+i,true)).join('')||'<div class="empty"><span>No items for these shops yet.</span></div>'}
+   <h2 style="font-size:14px;color:var(--muted);font-family:var(--body);font-weight:600">Other shops · Parent A hasn’t allowed these</h2>
+   ${cur.others.map((p,i)=>prodHTML(p,'o'+i,false)).join('')}`;
 }
+let cur={allowed:[],others:[]};
+function prodHTML(p,key,ok){const c=tileColor(p.seller);return `<div class="prod"><div class="tile" style="background:color-mix(in srgb,${c} 14%,transparent);color:${c}">${esc(p.seller[0])}</div><div class="n"><b>${esc(p.item)}</b><small>${esc(p.seller)}${ok?'':' · not allowed'}</small></div><button class="buy num" data-buy="${key}">${gbp(p.price)}</button></div>`}
 function renderActivity(){
   const el=$('#s-activity'); const ids=new Set(mine().map(a=>a.id));
   const tx=st?st.tx.filter(t=>ids.has(t.agent)).slice().reverse():[];
@@ -348,14 +365,13 @@ function notifyDiff(a,b){
     if(r.status==='approved')banner('Request approved',`Parent A gave you ${gbpS(r.granted||r.to)} ${r.field==='perDay'?'per day':'per payment'}.`,'ok');
     else banner('Request declined','Parent A kept your limits the same.','no');
   });
-  const card=$(`[data-card]`); if(card){card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash')}
 }
 
 /* ---------- actions ---------- */
 function openSheet(html){sheet=true;$('#sheet').innerHTML='<div class="grab"></div>'+html;$('#sheet').classList.add('on');$('#scrim').classList.add('on')}
 function closeSheet(){sheet=null;$('#sheet').classList.remove('on');$('#scrim').classList.remove('on')}
 function buy(i){
-  const p=PRODUCTS[i], a=ag(shopAgent); if(!a)return;
+  const p=i[0]==='a'?cur.allowed[+i.slice(1)]:cur.others[+i.slice(1)], a=ag(shopAgent); if(!a||!p)return;
   const r=authorise(a,p.seller,p.price);
   st.tx.push({id:rid('t'),agent:a.id,seller:p.seller,item:p.item,amount:p.price,ok:r.ok,reason:r.reason,t:new Date(),via:'phone'});
   save(); render();
@@ -393,7 +409,7 @@ document.addEventListener('click',e=>{
   if(t.id==='bellBtn'){tab='alerts';render();return}
   if(d.goshop){shopAgent=d.goshop;tab='shop';render();return}
   if(d.pick){shopAgent=d.pick;render();return}
-  if(d.buy!==undefined){buy(+d.buy);return}
+  if(d.buy!==undefined){buy(d.buy);return}
   if(d.stop){stopMine(d.stop);return}
   if(d.resume){resumeMine(d.resume);return}
   if(d.ask){openAsk(d.ask,d.field,d.amt?+d.amt:0);return}
@@ -404,8 +420,29 @@ document.addEventListener('click',e=>{
 });
 $('#scrim').onclick=closeSheet;
 setInterval(()=>{if(!sheet)render()},30000);
+setInterval(()=>{try{const s=localStorage.getItem(KEY);if(s&&s!==lastSaved)onRemote(s)}catch(e){}},1500);
 
+
+/* extra channels: parent frame relay (demo page) + optional sync server (node server.js, works across devices) */
+const inFrame=window.self!==window.top;
+let server=false;
+function sendOut(str){
+  if(inFrame){try{parent.postMessage({fw:'state',str},'*')}catch(e){}}
+  if(server)fetch('api/state',{method:'POST',body:str,headers:{'Content-Type':'text/plain'}}).catch(()=>{});
+}
+addEventListener('message',e=>{const d=e.data;if(!d||!d.fw)return;if(d.fw==='state')onRemote(d.str);if(d.fw==='reset')location.reload()});
+async function connectServer(onFirst){
+  try{
+    const r=await fetch('api/state',{cache:'no-store'});
+    if(r.status!==200&&r.status!==204)return;
+    server=true;
+    if(r.status===200){const s=await r.text();if(s)onFirst(s)}else if(lastSaved)sendOut(lastSaved);
+    const es=new EventSource('api/events');
+    es.onmessage=ev=>{const m=JSON.parse(ev.data);if(m.type==='state')onRemote(m.str);if(m.type==='reset')location.reload()};
+  }catch(e){}
+}
 load(); render(); booted=true;
+connectServer(str=>{st=parse(str);lastSaved=str;try{localStorage.setItem(KEY,str)}catch(e){}render()});
 })();
 </script>
 </body></html>

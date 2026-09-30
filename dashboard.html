@@ -328,6 +328,9 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .quick button{font-size:12px;padding:4px 9px;border-radius:7px;border:1px solid var(--line);color:var(--fg-2);font-family:var(--f-num)}
 .quick button:hover{border-color:var(--accent);color:var(--accent)}
 .sellers{display:flex;flex-wrap:wrap;gap:6px}
+.spick{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow:auto;padding-right:4px}
+.sg-h{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sg-all{font-size:12px;color:var(--accent);font-weight:600;letter-spacing:0;text-transform:none}
 .sel-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 10px;border-radius:9px;border:1px solid var(--line);color:var(--muted);transition:all .2s}
 .sel-chip .i{width:13px;height:13px}
 .sel-chip.on{border-color:color-mix(in srgb,var(--good) 45%,transparent);background:var(--good-soft);color:var(--fg)}
@@ -634,8 +637,8 @@ const ALL_SELLERS=[...new Set(Object.values(CATALOG).flatMap(c=>c.sellers))];
 const MEMBERS=[
  {id:'femi',name:'Parent A',short:'Parent A',ini:'PA',role:'Owner',note:'Wallet owner · you',color:'var(--accent)'},
  {id:'bunmi',name:'Parent B',short:'Parent B',ini:'PB',role:'Admin',note:'Can raise limits up to £500',color:'var(--good)'},
- {id:'ada',name:'Teenager',short:'Teenager',ini:'T',role:'Member',note:'15 · uses agents on the phone app',color:'#d4497a'},
- {id:'tobi',name:'Child',short:'Child',ini:'C',role:'Viewer',note:'8 · no access in v1',color:'#7a5cd6'},
+ {id:'ada',name:'David',short:'David',ini:'D',role:'Member',note:'15 · uses agents on the phone app',color:'#d4497a'},
+ {id:'tobi',name:'Mark',short:'Mark',ini:'M',role:'Viewer',note:'8 · no access yet',color:'#7a5cd6'},
 ];
 const mem=id=>MEMBERS.find(m=>m.id===id);
 const n0=now();
@@ -997,6 +1000,16 @@ function renderReport(){
   <div><button class="btn primary" data-go="overview">Open control centre ${I('arrow')}</button></div></div>`;
 }
 
+/* ---------- seller picker: every shop, grouped, multi-select ---------- */
+function sellerPicker(selected,firstCat,attr){
+  const cats=Object.entries(CATALOG).sort((a,b)=>(b[0]===firstCat)-(a[0]===firstCat));
+  const custom=selected.filter(x=>!ALL_SELLERS.includes(x));
+  const group=(key,label,list)=>{const all=list.every(x=>selected.includes(x));
+    return `<div class="sgroup"><div class="sg-h"><span>${esc(label)}</span><button class="sg-all" data-sgroup="${key}" data-mode="${attr}">${all?'Clear':'Allow all'}</button></div><div class="sellers">${list.map(x=>`<button class="sel-chip ${selected.includes(x)?'on':''}" data-${attr}="${esc(x)}">${I(selected.includes(x)?'check':'plus')}${esc(x)}</button>`).join('')}</div></div>`};
+  return `<div class="spick">${cats.map(([k,c])=>group(k,c.label,c.sellers)).join('')}${custom.length?group('_custom','Added by you',custom):''}</div>`;
+}
+function toggleGroup(list,key){const g=key==='_custom'?list.filter(x=>!ALL_SELLERS.includes(x)):CATALOG[key].sellers;const all=g.every(x=>list.includes(x));return all?list.filter(x=>!g.includes(x)):[...new Set([...list,...g])]}
+
 /* ---------- drawer: agent detail + limits ---------- */
 let D=null;
 function openDrawer(aid){
@@ -1026,7 +1039,7 @@ function drawDrawer(){
       ${ruleMoney('perPayment','Max per payment','The most it can pay in one go',maxPP)}
       ${ruleMoney('perDay','Max per day','Resets at midnight UK time',maxPD)}
       <div class="rule"><div class="rule-h"><div><b>Allowed sellers</b><small>Anyone not ticked is declined</small></div><span class="chip">${D.draft.sellers.length} allowed</span></div>
-        <div class="sellers">${sellers.map(s=>`<button class="sel-chip ${D.draft.sellers.includes(s)?'on':''}" data-seller="${esc(s)}">${I(D.draft.sellers.includes(s)?'check':'plus')}${esc(s)}</button>`).join('')}</div>
+        ${sellerPicker(D.draft.sellers,a.cat,'seller')}
         <div class="add-seller"><input class="inp" id="newSeller" placeholder="Add a seller, e.g. Waitrose"><button class="btn ghost sm" id="addSellerBtn">Add</button></div></div>
       <div class="rule"><div class="rule-h"><div><b>Permission ends</b><small>After this date every payment is declined</small></div></div>
         <input class="inp" type="date" id="in-expires" value="${D.draft.expires}">
@@ -1083,7 +1096,7 @@ function openModal(html){const m=$('#modal');m.innerHTML=html;m.classList.add('o
 function closeModal(){M=null;$('#modal').classList.remove('on');if(!$('#drawer').classList.contains('on'))$('#scrim').classList.remove('on')}
 function openAdd(){
   const eoy=new Date(now().getFullYear(),11,31);
-  M={type:'add',step:1,f:{name:'',purpose:'',icon:'gift',cat:'gifts',sponsor:'femi',perPayment:'',perDay:'',sellers:[],expires:'',color:COLOR_OPTS[0]}};
+  M={type:'add',step:1,f:{name:'',purpose:'',icon:'book',cat:'education',sponsor:'ada',perPayment:'',perDay:'',sellers:[],expires:'',color:COLOR_OPTS[0]}};
   M.eoy=isoDate(eoy); drawAdd();
 }
 function demoFill(){let e=new Date(2026,9,23);if(e<now())e=new Date(+sod(now())+23*DAY);Object.assign(M.f,{name:'Homework Tutor',purpose:'Revision apps, e-books, practice papers',icon:'book',cat:'education',sponsor:'ada',perPayment:10,perDay:20,sellers:['Revision Hub','PaperStack','Study Books'],expires:isoDate(e),color:'#d4497a'});drawAdd()}
@@ -1094,14 +1107,14 @@ function drawAdd(){
   if(s===1) body=`<div class="field"><label for="f-name">Agent name</label><input class="inp" id="f-name" value="${esc(f.name)}" placeholder="e.g. Gift Finder"></div>
     <div class="field"><label for="f-purpose">What it buys</label><input class="inp" id="f-purpose" value="${esc(f.purpose)}" placeholder="e.g. Birthday presents for the kids"></div>
     <div class="grid2"><div class="field"><label for="f-cat">Kind of seller</label><select class="sel" id="f-cat">${cats.map(([k,c])=>`<option value="${k}" ${k===f.cat?'selected':''}>${c.label}</option>`).join('')}</select></div>
-    <div class="field"><label for="f-sponsor">Who uses it</label><select class="sel" id="f-sponsor">${MEMBERS.filter(m=>m.role!=='Viewer').map(m=>`<option value="${m.id}" ${m.id===f.sponsor?'selected':''}>${m.name}</option>`).join('')}</select></div></div>
+    <div class="field"><label for="f-sponsor">Who uses it <span style="color:var(--muted);font-weight:400">(David’s agents show on the phone)</span></label><select class="sel" id="f-sponsor">${MEMBERS.filter(m=>m.role!=='Viewer').map(m=>`<option value="${m.id}" ${m.id===f.sponsor?'selected':''}>${m.name}</option>`).join('')}</select></div></div>
     <div class="field"><label>Icon</label><div class="icons" style="--c:${f.color}">${ICON_OPTS.map(ic=>`<button data-icon="${ic}" class="${ic===f.icon?'on':''}" aria-label="${ic}">${I(ic)}</button>`).join('')}</div></div>
-    <button class="demo-link" id="demoFill">${I('zap')}Fill in the demo: Homework Tutor for Teenager</button>`;
+    <button class="demo-link" id="demoFill">${I('zap')}Fill in the demo: Homework Tutor for David</button>`;
   if(s===2){
     const pool=[...new Set([...CATALOG[f.cat].sellers,...f.sellers])];
     body=`<div class="grid2"><div class="field"><label for="f-pp">Max per payment (£)</label><input class="inp num" type="number" min="1" id="f-pp" value="${f.perPayment}" placeholder="50"></div>
     <div class="field"><label for="f-pd">Max per day (£)</label><input class="inp num" type="number" min="1" id="f-pd" value="${f.perDay}" placeholder="100"></div></div>
-    <div class="field"><label>Allowed sellers</label><div class="sellers">${pool.map(x=>`<button class="sel-chip ${f.sellers.includes(x)?'on':''}" data-fseller="${esc(x)}">${I(f.sellers.includes(x)?'check':'plus')}${esc(x)}</button>`).join('')}</div><small>Anything you don’t tick is declined.</small></div>
+    <div class="field"><label>Allowed sellers <span style="color:var(--muted);font-weight:400">· ${f.sellers.length} picked, tick as many as you like</span></label>${sellerPicker(f.sellers,f.cat,'fseller')}<div class="add-seller"><input class="inp" id="fNewSeller" placeholder="Add another shop, e.g. Waitrose"><button class="btn ghost sm" id="fAddSeller">Add</button></div><small>Anything you don’t tick is declined.</small></div>
     <div class="field"><label for="f-exp">Permission ends (required)</label><input class="inp" type="date" id="f-exp" value="${f.expires}"><div class="quick"><button data-fexp="30">+30 days</button><button data-fexp="90">+90 days</button><button data-fexp="eoy">End of year</button></div></div>`;
   }
   if(s===3) body=`<div class="acard" style="--c:${f.color};pointer-events:none"><div class="a-top"><div class="a-ic">${I(f.icon)}</div><div class="a-name"><b>${esc(f.name)}</b><small>Used by ${mem(f.sponsor).short}</small></div><span class="status active"><i></i>Active</span></div></div>
@@ -1167,23 +1180,42 @@ const KEY='fw-state-v1', DATE_KEYS=['expires','pausedAt','t','dt'];
 const bc='BroadcastChannel' in window?new BroadcastChannel('fw-sync'):null;
 let lastSaved='';
 const snapshot=()=>JSON.stringify({agents:S.agents,tx:S.tx.map(({fresh,...t})=>t),audit:S.audit,requests:S.requests,roles:MEMBERS.map(m=>m.role)});
-function persist(){const str=snapshot();if(str===lastSaved)return;lastSaved=str;try{localStorage.setItem(KEY,str)}catch(e){}bc&&bc.postMessage({type:'state',str})}
+function persist(){const str=snapshot();if(str===lastSaved)return;lastSaved=str;sendOut(str);try{localStorage.setItem(KEY,str)}catch(e){}bc&&bc.postMessage({type:'state',str})}
 function applyState(str,remote){
   const d=JSON.parse(str,(k,v)=>DATE_KEYS.includes(k)&&typeof v==='string'?new Date(v):v);
   if(remote){
     const oldTx=new Set(S.tx.map(t=>t.id)), oldReq=new Map(S.requests.map(r=>[r.id,r.status]));
-    d.tx.filter(t=>!oldTx.has(t.id)&&t.via==='phone').forEach(t=>{const a=d.agents.find(x=>x.id===t.agent);toast({kind:t.ok?'ok':'warn',title:t.ok?`Teenager bought ${t.item||'something'} · ${gbp(t.amount)}`:`Teenager’s purchase was declined`,sub:`${a?a.name:''} at ${t.seller}${t.ok?'':' · '+t.reason}`});setTimeout(()=>pingCard(t.agent,t.ok),50)});
-    d.requests.filter(r=>!oldReq.has(r.id)).forEach(r=>toast({kind:'info',title:'New request from Teenager',sub:`Wants ${gbpShort(r.to)} ${r.field==='perDay'?'per day':'per payment'}. Approve it under Needs you.`}));
+    d.tx.filter(t=>!oldTx.has(t.id)&&t.via==='phone').forEach(t=>{const a=d.agents.find(x=>x.id===t.agent);toast({kind:t.ok?'ok':'warn',title:t.ok?`David bought ${t.item||'something'} · ${gbp(t.amount)}`:`David’s purchase was declined`,sub:`${a?a.name:''} at ${t.seller}${t.ok?'':' · '+t.reason}`});setTimeout(()=>pingCard(t.agent,t.ok),50)});
+    d.requests.filter(r=>!oldReq.has(r.id)).forEach(r=>toast({kind:'info',title:'New request from David',sub:`Wants ${gbpShort(r.to)} ${r.field==='perDay'?'per day':'per payment'}. Approve it under Needs you.`}));
     const was=new Map(S.agents.map(a=>[a.id,a.status]));
-    d.agents.forEach(a=>{if(was.get(a.id)==='active'&&a.status==='paused'&&a.pausedBy==='ada')toast({kind:'stop',title:`Teenager stopped ${a.name}`,sub:'From the phone app.'})});
+    d.agents.forEach(a=>{if(was.get(a.id)==='active'&&a.status==='paused'&&a.pausedBy==='ada')toast({kind:'stop',title:`David stopped ${a.name}`,sub:'From the phone app.'})});
   }
   S.agents=d.agents;S.tx=d.tx;S.audit=d.audit;S.requests=d.requests;(d.roles||[]).forEach((r,i)=>MEMBERS[i]&&(MEMBERS[i].role=r));
-  lastSaved=str;
+  lastSaved=str;try{localStorage.setItem(KEY,str)}catch(e){}
 }
 function onRemote(str){if(!str||str===lastSaved)return;applyState(str,true);Object.keys(cardSig).forEach(k=>delete cardSig[k]);render()}
 bc&&(bc.onmessage=e=>{if(e.data.type==='state')onRemote(e.data.str);if(e.data.type==='reset')location.reload()});
 addEventListener('storage',e=>{if(e.key===KEY){if(e.newValue)onRemote(e.newValue);else location.reload()}});
-function resetDemo(){try{localStorage.removeItem(KEY)}catch(e){}bc&&bc.postMessage({type:'reset'});location.reload()}
+
+/* extra channels: parent frame relay (demo page) + optional sync server (node server.js, works across devices) */
+const inFrame=window.self!==window.top;
+let server=false;
+function sendOut(str){
+  if(inFrame){try{parent.postMessage({fw:'state',str},'*')}catch(e){}}
+  if(server)fetch('api/state',{method:'POST',body:str,headers:{'Content-Type':'text/plain'}}).catch(()=>{});
+}
+addEventListener('message',e=>{const d=e.data;if(!d||!d.fw)return;if(d.fw==='state')onRemote(d.str);if(d.fw==='reset')location.reload()});
+async function connectServer(onFirst){
+  try{
+    const r=await fetch('api/state',{cache:'no-store'});
+    if(r.status!==200&&r.status!==204)return;
+    server=true;
+    if(r.status===200){const s=await r.text();if(s)onFirst(s)}else if(lastSaved)sendOut(lastSaved);
+    const es=new EventSource('api/events');
+    es.onmessage=ev=>{const m=JSON.parse(ev.data);if(m.type==='state')onRemote(m.str);if(m.type==='reset')location.reload()};
+  }catch(e){}
+}
+async function resetDemo(){try{localStorage.removeItem(KEY)}catch(e){}bc&&bc.postMessage({type:'reset'});if(inFrame)try{parent.postMessage({fw:'reset'},'*')}catch(e){}if(server)await fetch('api/reset',{method:'POST'}).catch(()=>{});location.reload()}
 
 function render(){
   refreshExpiry();
@@ -1211,6 +1243,7 @@ document.addEventListener('click',e=>{
     if(d.step){D.draft[d.step]=Math.max(1,D.draft[d.step]+(+d.d));updateDiff();return}
     if(d.bump){D.draft[d.bump]=Math.max(1,D.draft[d.bump]+(+d.d));updateDiff();return}
     if(d.seller!==undefined){const s=d.seller,l=D.draft.sellers;D.draft.sellers=l.includes(s)?l.filter(x=>x!==s):[...l,s];t.classList.toggle('on');t.querySelector('svg').outerHTML=I(D.draft.sellers.includes(s)?'check':'plus');$('.rule .chip').textContent=D.draft.sellers.length+' allowed';updateDiff();return}
+    if(d.sgroup&&d.mode==='seller'){D.draft.sellers=toggleGroup(D.draft.sellers,d.sgroup);const keep={...D.draft};drawDrawer();D.draft=keep;updateDiff();return}
     if(t.id==='addSellerBtn'){const v=$('#newSeller').value.trim();if(v&&!D.draft.sellers.includes(v)){D.draft.sellers.push(v);const keep={...D.draft};drawDrawer();D.draft=keep;updateDiff()}return}
     if(d.exp){const b=new Date(Math.max(+ag(D.id).expires,+now()));const nd=d.exp==='eoy'?new Date(now().getFullYear(),11,31):new Date(+b+(+d.exp)*DAY);D.draft.expires=isoDate(nd);$('#in-expires').value=D.draft.expires;updateDiff();return}
     if(t.id==='drSave'){saveDraft();return}
@@ -1221,6 +1254,8 @@ document.addEventListener('click',e=>{
   if(M&&M.type==='add'){
     if(t.id==='demoFill'){demoFill();return}
     if(d.icon){M.f.icon=d.icon;drawAdd();return}
+    if(d.sgroup&&d.mode==='fseller'){M.f.sellers=toggleGroup(M.f.sellers,d.sgroup);drawAdd();return}
+    if(t.id==='fAddSeller'){const v=$('#fNewSeller').value.trim();if(v&&!M.f.sellers.includes(v))M.f.sellers.push(v);drawAdd();return}
     if(d.fseller!==undefined){const s=d.fseller,l=M.f.sellers;M.f.sellers=l.includes(s)?l.filter(x=>x!==s):[...l,s];drawAdd();return}
     if(d.fexp){M.f.expires=isoDate(d.fexp==='eoy'?new Date(now().getFullYear(),11,31):new Date(+now()+(+d.fexp)*DAY));drawAdd();return}
     if(t.id==='mBack'){M.step--;drawAdd();return}
@@ -1257,7 +1292,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;
-  if(M&&M.type==='add'){if(t.id==='f-cat'){M.f.cat=t.value;M.f.sellers=[]}if(t.id==='f-sponsor')M.f.sponsor=t.value}
+  if(M&&M.type==='add'){if(t.id==='f-cat'){M.f.cat=t.value;M.f.sellers=[...CATALOG[t.value].sellers];}if(t.id==='f-sponsor')M.f.sponsor=t.value}
   if(M&&M.type==='sim'){if(t.id==='s-agent'){const a=ag(t.value);M.agent=t.value;M.seller=a.sellers[0]||ALL_SELLERS[0];M.result=null;drawSim()}if(t.id==='s-seller'){M.seller=t.value.replace(' · not allowed','');M.result=null;drawSim()}}
   if(t.dataset.role){const m=mem(t.dataset.role);const old=m.role;m.role=t.value;toast({kind:'ok',title:`${m.short} is now ${t.value==='Admin'?'an':'a'} ${t.value}`,sub:`Was ${old}.`});renderMembers()}
 });
@@ -1266,6 +1301,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){if(M)closeModal();else if(D)closeDrawer()}
 
 });
+setInterval(()=>{try{const s=localStorage.getItem(KEY);if(s&&s!==lastSaved)onRemote(s)}catch(e){}},1500);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(renderChart,120)});
 
 function setThemeIcon_unused(){const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':!matchMedia('(prefers-color-scheme: light)').matches;$('#themeBtn').innerHTML=I(dark?'sun':'moon')}
@@ -1288,6 +1324,7 @@ hydrateIcons();
 try{const saved=localStorage.getItem(KEY);if(saved)applyState(saved,false)}catch(e){}
 S.tx.forEach(t=>seenTx.add(t.id));
 render(); booted=true;
+connectServer(str=>{applyState(str,false);Object.keys(cardSig).forEach(k=>delete cardSig[k]);render();sendOut(lastSaved)});
 })();
 </script>
 
