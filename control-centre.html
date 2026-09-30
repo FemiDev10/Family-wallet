@@ -1,57 +1,36 @@
-<title>Vybe Agent Control</title>
+<title>Family Wallet Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: icon rail + labelled nav + scrolling workspace; agent cards are the hero, chart and feed below. */
+/* Layout: one labelled sidebar + white workspace; agent cards first, then spend chart and payments. Matches the Family wallet phone app. */
 :root{
-  --bg:#0c0c0d; --panel:#141416; --panel-2:#1b1b1e; --panel-3:#232327; --line:#28282d; --line-2:#34343a;
-  --fg:#efede9; --fg-2:#c9c6c0; --muted:#85837e; --faint:#5b5a57;
-  --accent:#ff7424; --accent-soft:rgba(255,116,36,.14); --accent-ink:#1a0d04;
-  --good:#2fc7a2; --good-soft:rgba(47,199,162,.13);
-  --warn:#f3b23a; --warn-soft:rgba(243,178,58,.14);
-  --bad:#f0544f; --bad-soft:rgba(240,84,79,.14); --bad-ink:#fff;
-  --shadow:0 10px 40px rgba(0,0,0,.45); --scrim:rgba(5,5,6,.62);
-  --glow:radial-gradient(120% 90% at 100% 0%, rgba(255,116,36,.10), transparent 55%);
-  --f-ui:"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-num:"Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --r:14px; --r-sm:10px;
-  color-scheme:dark;
-}
-@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
-  --bg:#f2f1ee; --panel:#ffffff; --panel-2:#f7f6f3; --panel-3:#efede9; --line:#e5e3de; --line-2:#d8d5cf;
-  --fg:#18171a; --fg-2:#3b3a3d; --muted:#6f6c67; --faint:#a19e98;
-  --accent:#e85c0d; --accent-soft:rgba(232,92,13,.10); --accent-ink:#fff;
-  --good:#0e9b7b; --good-soft:rgba(14,155,123,.10);
-  --warn:#b97a06; --warn-soft:rgba(185,122,6,.12);
-  --bad:#d8352f; --bad-soft:rgba(216,53,47,.09); --bad-ink:#fff;
-  --shadow:0 10px 40px rgba(30,25,20,.12); --scrim:rgba(30,28,25,.35);
-  --glow:radial-gradient(120% 90% at 100% 0%, rgba(232,92,13,.07), transparent 55%);
-  color-scheme:light;
-}}
-:root[data-theme="light"]{
-  --bg:#f2f1ee; --panel:#ffffff; --panel-2:#f7f6f3; --panel-3:#efede9; --line:#e5e3de; --line-2:#d8d5cf;
-  --fg:#18171a; --fg-2:#3b3a3d; --muted:#6f6c67; --faint:#a19e98;
-  --accent:#e85c0d; --accent-soft:rgba(232,92,13,.10); --accent-ink:#fff;
-  --good:#0e9b7b; --good-soft:rgba(14,155,123,.10);
-  --warn:#b97a06; --warn-soft:rgba(185,122,6,.12);
-  --bad:#d8352f; --bad-soft:rgba(216,53,47,.09); --bad-ink:#fff;
-  --shadow:0 10px 40px rgba(30,25,20,.12); --scrim:rgba(30,28,25,.35);
-  --glow:radial-gradient(120% 90% at 100% 0%, rgba(232,92,13,.07), transparent 55%);
+  --bg:#EEF1F6; --panel:#FFFFFF; --panel-2:#F4F6FA; --panel-3:#ECEEF3; --line:#DCE2EE; --line-2:#C9D1E2;
+  --fg:#17203A; --fg-2:#34405E; --muted:#5B6682; --faint:#98A1B8;
+  --accent:#3F51D8; --accent-soft:#E6E9FF; --accent-ink:#FFFFFF;
+  --good:#1E8A58; --good-soft:#E1F4EA;
+  --warn:#A86300; --warn-soft:#FFF1D9;
+  --bad:#D23B3B; --bad-soft:#FDE6E6; --bad-ink:#FFFFFF;
+  --shadow:0 12px 36px rgba(23,32,58,.10); --scrim:rgba(23,32,58,.28);
+  --f-ui:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-disp:"Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --f-num:"Figtree", system-ui, sans-serif;
+  --r:16px; --r-sm:10px;
   color-scheme:light;
 }
-
 *{box-sizing:border-box}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
-.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.head h1,.kpi-v .num,.a-money .num,.mail-body h3,.m-h h3{font-family:var(--f-disp)}
 svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 svg.i.fill{fill:currentColor;stroke:none}
 
-.app{display:grid;grid-template-columns:64px 236px minmax(0,1fr);height:100%}
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);height:100%}
 
 /* rail */
 .rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0}
@@ -67,7 +46,7 @@ svg.i.fill{fill:currentColor;stroke:none}
 /* side */
 .side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 12px;gap:4px;min-height:0;overflow:auto}
 .wallet{display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;border:1px solid var(--line);background:var(--panel-2);margin-bottom:14px}
-.wallet .av{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,var(--accent),#ffb36b);display:grid;place-items:center;color:var(--accent-ink);font-weight:700}
+.wallet .av{width:34px;height:34px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);font-weight:700}
 .wallet b{display:block;font-weight:600;font-size:13.5px}
 .wallet small{color:var(--muted);font-size:12px}
 .nav-h{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);padding:14px 10px 6px}
@@ -86,7 +65,7 @@ svg.i.fill{fill:currentColor;stroke:none}
 
 /* main */
 .main{min-width:0;display:flex;flex-direction:column;min-height:0}
-.top{display:flex;align-items:center;gap:10px;padding:12px 28px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px)}
+.top{display:flex;align-items:center;gap:10px;padding:12px 28px;border-bottom:1px solid var(--line);background:var(--panel)}
 .search{flex:1;max-width:420px;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:99px;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
 .search input{border:0;background:none;outline:none;flex:1;min-width:0}
 .kbd{font-family:var(--f-num);font-size:11px;border:1px solid var(--line-2);border-radius:6px;padding:1px 6px;color:var(--muted)}
@@ -161,7 +140,7 @@ svg.i.fill{fill:currentColor;stroke:none}
 .agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
 .acard{--c:var(--accent);background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;
   transition:filter .5s,opacity .5s,border-color .3s,transform .25s,box-shadow .3s}
-.acard::before{content:"";position:absolute;inset:0;background:radial-gradient(90% 70% at 100% 0%, color-mix(in srgb,var(--c) 16%,transparent), transparent 60%);pointer-events:none;transition:opacity .5s}
+.acard::before{content:"";position:absolute;inset:0;background:radial-gradient(90% 70% at 100% 0%, color-mix(in srgb,var(--c) 9%,transparent), transparent 60%);pointer-events:none;transition:opacity .5s}
 .acard:hover{border-color:var(--line-2);transform:translateY(-2px);box-shadow:var(--shadow)}
 .acard.enter{animation:cardIn .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0ms)}
 @keyframes cardIn{from{opacity:.001;transform:translateY(14px) scale(.98)}}
@@ -425,8 +404,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .mtop{display:none}
 
 @media (max-width:1180px){
-  .app{grid-template-columns:64px minmax(0,1fr)}
+  .app{grid-template-columns:minmax(0,1fr)}
   .side{display:none}
+  .mtop{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--line);scrollbar-width:none;background:var(--panel)}
+  .mtop .nav{width:auto;white-space:nowrap;flex:none}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .row2{grid-template-columns:minmax(0,1fr)}
 }
@@ -452,23 +433,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 </style>
 
 <div class="app">
-  <nav class="rail" aria-label="Sections">
-    <div class="logo" aria-hidden="true">
-      <svg width="30" height="30" viewBox="0 0 30 30"><rect x="3" y="5" width="18" height="5" rx="2.5" fill="var(--accent)"/><rect x="8" y="12.5" width="19" height="5" rx="2.5" fill="var(--accent)" opacity=".75"/><rect x="3" y="20" width="14" height="5" rx="2.5" fill="var(--accent)" opacity=".5"/></svg>
-    </div>
-    <button class="rail-btn on" data-go="overview" title="Agents" aria-label="Agents"></button>
-    <button class="rail-btn" data-go="activity" title="Activity" aria-label="Activity"></button>
-    <button class="rail-btn" data-go="requests" title="Requests" aria-label="Requests"></button>
-    <button class="rail-btn" data-go="members" title="Members" aria-label="Members and roles"></button>
-    <button class="rail-btn" data-go="report" title="Weekly report" aria-label="Weekly report"></button>
-    <div class="sp"></div>
-    <button class="rail-btn" id="themeBtn" title="Switch theme" aria-label="Switch theme"></button>
-  </nav>
-
   <aside class="side">
     <div class="wallet">
-      <div class="av">A</div>
-      <div><b>Adeyemi Household</b><small>Family wallet · 4 people</small></div>
+      <div class="av">F</div>
+      <div><b>Family wallet</b><small>Admin · 4 people</small></div>
     </div>
     <div class="nav-h">Control</div>
     <button class="nav on" data-go="overview"><span data-i="grid"></span>Agents<span class="badge" id="navAgents">5</span></button>
@@ -481,16 +449,14 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
     <div class="sp"></div>
     <button class="stopall" id="stopAllBtn"><span data-i="shield"></span>Stop all agents</button>
     <div class="me">
-      <div class="pfp" style="background:var(--accent-soft);color:var(--accent)">FA</div>
-      <div><b>Femi Adeyemi</b><small>Owner · full control</small></div>
+      <div class="pfp" style="background:var(--accent-soft);color:var(--accent)">PA</div>
+      <div><b>Parent A</b><small>Owner · full control</small></div>
     </div>
   </aside>
 
   <div class="main">
-    <header class="top">
-      <label class="search"><span data-i="search"></span><input id="q" placeholder="Search agents, sellers, payments…" aria-label="Search"><span class="kbd">⌘K</span></label>
+    <header class="top"><b style="font-family:var(--f-disp);font-size:16px">Control centre</b>
       <div class="sp"></div>
-      <button class="pill-btn live-on" id="liveBtn" aria-pressed="true" title="Agents keep making sample payments in the background"><span class="live-dot"></span><span id="liveTxt">Live</span></button>
       <button class="pill-btn" id="simBtn"><span data-i="zap"></span><span class="hide-sm">Simulate payment</span></button>
       <button class="icon-btn" id="bellBtn" aria-label="Requests"><span data-i="bell"></span></button>
     </header>
@@ -508,7 +474,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
       <section class="view on" id="v-overview">
         <div class="head">
           <div>
-            <h1 id="greet">Evening, <em>Femi</em></h1>
+            <h1 id="greet">Evening, <em>Parent A</em></h1>
             <p id="subGreet">Loading your agents…</p>
           </div>
           <div class="sp"></div>
@@ -529,7 +495,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
         <div class="row2">
           <div class="panel">
             <div class="panel-h"><span data-i="activity"></span><h2>Spend by agent</h2><small>last 14 days · £</small><div class="sp"></div>
-              <div class="seg-ctl" id="chartMode"><button class="on" data-m="stack">Stacked</button><button data-m="total">Total</button></div>
+              
             </div>
             <div class="chart-wrap"><svg id="chart" role="img" aria-label="Daily spend by agent for the last 14 days"></svg><div class="tip" id="tip"></div></div>
             <div class="legend" id="legend"></div>
@@ -628,7 +594,6 @@ const P={
 const FILLED={stop:'<rect x="6" y="6" width="12" height="12" rx="2.5"/>',play:'<path d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 8 5.5z"/>'};
 const I=(n,cls='')=>FILLED[n]?`<svg class="i fill ${cls}" viewBox="0 0 24 24" aria-hidden="true">${FILLED[n]}</svg>`:`<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n]||''}</svg>`;
 const hydrateIcons=(root=document)=>root.querySelectorAll('[data-i]').forEach(el=>{el.outerHTML=I(el.dataset.i)});
-document.querySelectorAll('.rail-btn[data-go]').forEach((b,i)=>b.innerHTML=I(['grid','activity','inbox','users','mail'][i]));
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -661,22 +626,22 @@ const CATALOG={
 };
 const ALL_SELLERS=[...new Set(Object.values(CATALOG).flatMap(c=>c.sellers))];
 const MEMBERS=[
- {id:'femi',name:'Femi Adeyemi',short:'Femi',ini:'FA',role:'Owner',note:'Parent · you',color:'var(--accent)'},
- {id:'bunmi',name:'Bunmi Adeyemi',short:'Bunmi',ini:'BA',role:'Admin',note:'Parent · can raise limits up to £500',color:'var(--good)'},
- {id:'ada',name:'Ada Adeyemi',short:'Ada',ini:'AA',role:'Member',note:'15 · sponsors Homework Tutor',color:'#f2668b'},
- {id:'tobi',name:'Tobi Adeyemi',short:'Tobi',ini:'TA',role:'Viewer',note:'8 · no access in v1',color:'#9c7bff'},
+ {id:'femi',name:'Parent A',short:'Parent A',ini:'PA',role:'Owner',note:'Wallet owner · you',color:'var(--accent)'},
+ {id:'bunmi',name:'Parent B',short:'Parent B',ini:'PB',role:'Admin',note:'Can raise limits up to £500',color:'var(--good)'},
+ {id:'ada',name:'Teenager',short:'Teenager',ini:'T',role:'Member',note:'15 · uses Homework Tutor on the phone app',color:'#d4497a'},
+ {id:'tobi',name:'Child',short:'Child',ini:'C',role:'Viewer',note:'8 · no access in v1',color:'#7a5cd6'},
 ];
 const mem=id=>MEMBERS.find(m=>m.id===id);
 const n0=now();
 const S={
  agents:[
-  {id:'research',name:'Research Scout',purpose:'Paywalled articles, reports and data API credits',icon:'search',color:'#2fc7a2',cat:'research',sponsor:'femi',perPayment:5,perDay:15,sellers:['FT.com','Nature','JSTOR','Statista API'],expires:new Date(+sod(n0)+61*DAY),status:'active',range:[1,5],freq:.85,max:3},
-  {id:'code',name:'Code Helper',purpose:'Cloud hosting, API credits, developer tools',icon:'code',color:'#4c8dff',cat:'code',sponsor:'bunmi',perPayment:20,perDay:30,sellers:['AWS','Vercel','Anthropic API','GitHub'],expires:new Date(+sod(n0)+18*DAY),status:'active',range:[4,18],freq:.6,max:2},
-  {id:'trip',name:'Trip Planner',purpose:'Train and flight tickets, hotels, car hire',icon:'plane',color:'#ff8a3d',cat:'travel',sponsor:'femi',perPayment:400,perDay:800,sellers:['LNER','Trainline','British Airways','Booking.com'],expires:new Date(+sod(n0)+12*DAY),status:'active',range:[20,90],freq:.12,max:1},
-  {id:'grocery',name:'Grocery Runner',purpose:'Weekly food shop and household basics',icon:'cart',color:'#9c7bff',cat:'grocery',sponsor:'bunmi',perPayment:120,perDay:150,sellers:['Tesco',"Sainsbury's"],expires:new Date(+sod(n0)+150*DAY),status:'active',range:[82,119],freq:0,max:1},
-  {id:'homework',name:'Homework Tutor',purpose:'Revision apps, e-books, practice papers',icon:'book',color:'#f2668b',cat:'education',sponsor:'ada',perPayment:10,perDay:10,sellers:['Seneca Learning','Kindle Store','CGP Books'],expires:new Date(+sod(n0)+79*DAY),status:'active',range:[2,6],freq:.3,max:1},
+  {id:'research',name:'Research Scout',purpose:'Paywalled articles, reports and data API credits',icon:'search',color:'#12a37f',cat:'research',sponsor:'femi',perPayment:5,perDay:15,sellers:['FT.com','Nature','JSTOR','Statista API'],expires:new Date(+sod(n0)+61*DAY),status:'active',range:[1,5],freq:.85,max:3},
+  {id:'code',name:'Code Helper',purpose:'Cloud hosting, API credits, developer tools',icon:'code',color:'#3b73e0',cat:'code',sponsor:'bunmi',perPayment:20,perDay:30,sellers:['AWS','Vercel','Anthropic API','GitHub'],expires:new Date(+sod(n0)+18*DAY),status:'active',range:[4,18],freq:.6,max:2},
+  {id:'trip',name:'Trip Planner',purpose:'Train and flight tickets, hotels, car hire',icon:'plane',color:'#e5732a',cat:'travel',sponsor:'femi',perPayment:400,perDay:800,sellers:['LNER','Trainline','British Airways','Booking.com'],expires:new Date(+sod(n0)+12*DAY),status:'active',range:[20,90],freq:.12,max:1},
+  {id:'grocery',name:'Grocery Runner',purpose:'Weekly food shop and household basics',icon:'cart',color:'#7a5cd6',cat:'grocery',sponsor:'bunmi',perPayment:120,perDay:150,sellers:['Tesco',"Sainsbury's"],expires:new Date(+sod(n0)+150*DAY),status:'active',range:[82,119],freq:0,max:1},
+  {id:'homework',name:'Homework Tutor',purpose:'Revision apps, e-books, practice papers',icon:'book',color:'#d4497a',cat:'education',sponsor:'ada',perPayment:10,perDay:10,sellers:['Seneca Learning','Kindle Store','CGP Books'],expires:new Date(+sod(n0)+79*DAY),status:'active',range:[2,6],freq:.3,max:1},
  ],
- tx:[],audit:[],requests:[],view:'overview',live:true,txFilter:'all',chartMode:'stack',q:'',
+ tx:[],audit:[],requests:[],view:'overview',live:false,txFilter:'all',chartMode:'stack',q:'',
 };
 const ag=id=>S.agents.find(a=>a.id===id);
 
@@ -825,8 +790,8 @@ function renderKPIs(){
     <div class="kpi-f"><span>${pend} request${pend===1?'':'s'} · ${al} alert${al===1?'':'s'}</span><button class="delta neutral" data-scroll="attn">Review ${I('arrow')}</button></div></div>`;
   $$('#kpis [data-to]').forEach(countUp);
   const h=n.getHours();
-  $('#greet').innerHTML=`${h<12?'Morning':h<18?'Afternoon':'Evening'}, <em>Femi</em>`;
-  $('#subGreet').textContent=`${active} of ${la.length} agents can spend from the Adeyemi wallet. ${gbp(week)} spent since Monday.`;
+  $('#greet').innerHTML=`${h<12?'Morning':h<18?'Afternoon':'Evening'}, <em>Parent A</em>`;
+  $('#subGreet').textContent=`${active} of ${la.length} agents can spend from the family wallet. ${gbp(week)} spent since Monday.`;
   $('#navAgents').textContent=la.length;
   $('#navReq').textContent=pend; $('#navReq').hidden=!pend;
   $$('.rail-btn[data-go="requests"]').forEach(b=>{b.querySelector('.dot')?.remove(); if(pend) b.insertAdjacentHTML('beforeend','<span class="dot"></span>')});
@@ -1020,8 +985,8 @@ function renderReport(){
   const dec=S.tx.filter(t=>!t.ok&&t.t>=from&&t.t<to);
   const exp=liveAgents().filter(a=>daysLeft(a.expires)<=21&&a.status!=='revoked').sort((a,b)=>a.expires-b.expires);
   const end=new Date(+to-DAY);
-  $('#mail').innerHTML=`<div class="mail-meta"><span>From</span><b>Vybe Wallet</b><span>To</span><b>Femi Adeyemi</b><span>Subject</span><b>Your AI helpers spent ${gbp(total)} last week</b></div>
-  <div class="mail-body"><h3>Hi Femi, here’s last week</h3><p>${from.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} to ${end.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}. <b class="num">${gbp(total)}</b> across ${rows.filter(r=>r.n).length} agents.</p>
+  $('#mail').innerHTML=`<div class="mail-meta"><span>From</span><b>Family wallet</b><span>To</span><b>Parent A</b><span>Subject</span><b>Your AI helpers spent ${gbp(total)} last week</b></div>
+  <div class="mail-body"><h3>Hi Parent A, here’s last week</h3><p>${from.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})} to ${end.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}. <b class="num">${gbp(total)}</b> across ${rows.filter(r=>r.n).length} agents.</p>
   <div>${rows.map(r=>`<div class="mrow" style="--c:${r.a.color}"><div class="a-ic">${I(r.a.icon)}</div><div class="n"><b>${esc(r.a.name)}</b><small>${r.n} payment${r.n===1?'':'s'} · ${r.a.status==='active'?'active':r.a.status}</small></div><span class="num">${gbp(r.total)}</span>
     ${r.a.status==='active'?`<button class="btn stop sm" data-stop="${r.a.id}">${I('stop')}Stop</button>`:`<button class="btn ghost sm" disabled>${r.a.status==='paused'?'Stopped':'Expired'}</button>`}</div>`).join('')}</div>
   <div class="facts"><div class="fact"><small>Biggest payment</small><p>${big?`${esc(ag(big.agent).name)}, <span class="num">${gbp(big.amount)}</span> to ${esc(big.seller)}`:'None'}</p></div>
@@ -1110,7 +1075,7 @@ function saveDraft(){
 
 /* ---------- modal: add agent ---------- */
 const ICON_OPTS=['search','code','plane','cart','book','gift','megaphone','store'];
-const COLOR_OPTS=['#e8c547','#2fc7a2','#4c8dff','#ff8a3d','#9c7bff','#f2668b'];
+const COLOR_OPTS=['#c9a21a','#12a37f','#3b73e0','#e5732a','#7a5cd6','#d4497a'];
 let M=null;
 function openModal(html){const m=$('#modal');m.innerHTML=html;m.classList.add('on');$('#scrim').classList.add('on')}
 function closeModal(){M=null;$('#modal').classList.remove('on');if(!$('#drawer').classList.contains('on'))$('#scrim').classList.remove('on')}
@@ -1119,7 +1084,7 @@ function openAdd(){
   M={type:'add',step:1,f:{name:'',purpose:'',icon:'gift',cat:'gifts',sponsor:'femi',perPayment:'',perDay:'',sellers:[],expires:'',color:COLOR_OPTS[0]}};
   M.eoy=isoDate(eoy); drawAdd();
 }
-function demoFill(){Object.assign(M.f,{name:'Gift Finder',purpose:'Birthday and Christmas presents',icon:'gift',cat:'gifts',sponsor:'femi',perPayment:50,perDay:100,sellers:['John Lewis','Etsy'],expires:M.eoy,color:'#e8c547'});drawAdd()}
+function demoFill(){Object.assign(M.f,{name:'Gift Finder',purpose:'Birthday and Christmas presents',icon:'gift',cat:'gifts',sponsor:'femi',perPayment:50,perDay:100,sellers:['John Lewis','Etsy'],expires:M.eoy,color:'#c9a21a'});drawAdd()}
 function drawAdd(){
   const f=M.f, s=M.step, cats=Object.entries(CATALOG);
   const steps=['Who it is','Spend rules','Review'].map((l,i)=>`<div class="${i<s?'done':''}"><i></i>${i+1}. ${l}</div>`).join('');
@@ -1243,10 +1208,10 @@ document.addEventListener('click',e=>{
   if(t.id==='addBtn'){openAdd();return}
   if(t.id==='simBtn'||t.id==='simBtn2'){openSim();return}
   if(t.id==='bellBtn'){go('requests');return}
-  if(t.id==='stopAllBtn'||t.id==='mStopAll'){openModal(`<div class="m-h"><div class="a-ic" style="--c:var(--bad)">${I('shield')}</div><h3>Stop every agent?</h3><button class="icon-btn" data-close aria-label="Close">${I('x')}</button></div><div class="m-b"><p style="margin:0;color:var(--fg-2)">All ${liveAgents().filter(a=>a.status==='active').length} active agents will be paused at once. Nothing will be able to spend from the Adeyemi wallet until you resume them one by one.</p></div><div class="m-f"><button class="btn ghost" data-close>Cancel</button><button class="btn danger" id="confirmStopAll">${I('stop')}Stop all agents</button></div>`);M={type:'confirm'};return}
+  if(t.id==='stopAllBtn'||t.id==='mStopAll'){openModal(`<div class="m-h"><div class="a-ic" style="--c:var(--bad)">${I('shield')}</div><h3>Stop every agent?</h3><button class="icon-btn" data-close aria-label="Close">${I('x')}</button></div><div class="m-b"><p style="margin:0;color:var(--fg-2)">All ${liveAgents().filter(a=>a.status==='active').length} active agents will be paused at once. Nothing will be able to spend from the family wallet until you resume them one by one.</p></div><div class="m-f"><button class="btn ghost" data-close>Cancel</button><button class="btn danger" id="confirmStopAll">${I('stop')}Stop all agents</button></div>`);M={type:'confirm'};return}
   if(t.id==='confirmStopAll'){stopAll();return}
   if(t.id==='liveBtn'){S.live=!S.live;t.classList.toggle('live-on',S.live);t.setAttribute('aria-pressed',S.live);$('#liveTxt').textContent=S.live?'Live':'Paused feed';return}
-  if(t.id==='themeBtn'){const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':!matchMedia('(prefers-color-scheme: light)').matches;r.dataset.theme=dark?'light':'dark';setThemeIcon();requestAnimationFrame(renderChart);return}
+  if(t.id==='themeBtn'){const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':!matchMedia('(prefers-color-scheme: light)').matches;r.dataset.theme=dark?'light':'dark';return}
   if(d.f){S.txFilter=d.f;$$('#txFilters .fchip').forEach(b=>b.classList.toggle('on',b===t));renderTables();return}
   if(d.m){S.chartMode=d.m;$$('#chartMode button').forEach(b=>b.classList.toggle('on',b===t));chartGrown=false;renderChart();return}
 });
@@ -1273,11 +1238,11 @@ document.addEventListener('change',e=>{
 $('#scrim').onclick=()=>{closeModal();closeDrawer()};
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){if(M)closeModal();else if(D)closeDrawer()}
-  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#q').focus()}
+
 });
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(renderChart,120)});
 
-function setThemeIcon(){const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':!matchMedia('(prefers-color-scheme: light)').matches;$('#themeBtn').innerHTML=I(dark?'sun':'moon')}
+function setThemeIcon_unused(){const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':!matchMedia('(prefers-color-scheme: light)').matches;$('#themeBtn').innerHTML=I(dark?'sun':'moon')}
 
 /* ---------- live background activity ---------- */
 setInterval(()=>{
@@ -1293,7 +1258,7 @@ setInterval(()=>{
 setInterval(()=>{Object.keys(cardSig).forEach(k=>delete cardSig[k]);if(!M)render()},60000);
 
 /* ---------- boot ---------- */
-hydrateIcons(); setThemeIcon();
+hydrateIcons();
 S.tx.forEach(t=>seenTx.add(t.id));
 render(); booted=true;
 })();
