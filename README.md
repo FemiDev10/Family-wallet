@@ -69,8 +69,9 @@ Built together by:
 <!-- Add each teammate: name, role on the team, GitHub profile -->
 - Femi ([@FemiDev10](https://github.com/FemiDev10)): admin dashboard and phone app build
 - Stephanie: product requirements (PRD) and technical requirements (TRD)
-- _Teammate name_ ([@username](https://github.com/username)): role
-- _Teammate name_ ([@username](https://github.com/username)): role
+- [@sumeyramr](https://github.com/sumeyramr): role to confirm
+- [@Yukidrew65](https://github.com/Yukidrew65): role to confirm
+- Fourth teammate: name and role to confirm
 
 ## Contributing
 
