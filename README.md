@@ -64,14 +64,14 @@ Plain HTML, CSS and JavaScript: no framework, no build step. Both screens share 
 
 ## Team
 
-Built together by:
+Built together by four people at the ProductTank buildathon:
 
 | Who | GitHub | Worked on |
 | --- | --- | --- |
 | Femi | [@FemiDev10](https://github.com/FemiDev10) | Admin dashboard, combined both into one system |
 | Aysegul Sumeyra Kanca | [@sumeyramr](https://github.com/sumeyramr) | Admin dashboard |
 | Yuki | [@Yukidrew65](https://github.com/Yukidrew65) | Phone app |
-| Stephanie | [@stepm](https://github.com/stepm) | Phone app |
+| Stephanie | GitHub to come | Phone app |
 
 ## Contributing
 
