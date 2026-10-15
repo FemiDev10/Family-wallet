@@ -71,7 +71,7 @@ Built together by four people at the ProductTank buildathon:
 | Femi | [@FemiDev10](https://github.com/FemiDev10) | Admin dashboard, combined both into one system |
 | Aysegul Sumeyra Kanca | [@sumeyramr](https://github.com/sumeyramr) | Admin dashboard |
 | Yuki | [@Yukidrew65](https://github.com/Yukidrew65) | Phone app |
-| Stephanie | GitHub to come | Phone app |
+| Stephanie | [@stephm](https://github.com/stephm) | Phone app |
 
 ## Contributing
 
