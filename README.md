@@ -66,11 +66,12 @@ Plain HTML, CSS and JavaScript: no framework, no build step. Both screens share 
 
 Built together by:
 
-<!-- Add each teammate: name, role on the team, GitHub profile -->
-- Femi ([@FemiDev10](https://github.com/FemiDev10)): admin dashboard and phone app build
-- Stephanie (GitHub to come): product requirements (PRD) and technical requirements (TRD)
-- Aysegul Sumeyra Kanca ([@sumeyramr](https://github.com/sumeyramr)): role to confirm
-- [@Yukidrew65](https://github.com/Yukidrew65): role to confirm
+| Who | GitHub | Worked on |
+| --- | --- | --- |
+| Femi | [@FemiDev10](https://github.com/FemiDev10) | Admin dashboard, and brought the dashboard and phone app together into one live, synced system |
+| Aysegul Sumeyra Kanca | [@sumeyramr](https://github.com/sumeyramr) | Admin dashboard |
+| Yuki | [@Yukidrew65](https://github.com/Yukidrew65) | Phone app |
+| Stephanie | GitHub to come | Phone app, plus the product and technical requirements (PRD and TRD) |
 
 ## Contributing
 
