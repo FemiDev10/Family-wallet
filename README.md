@@ -68,10 +68,10 @@ Built together by:
 
 | Who | GitHub | Worked on |
 | --- | --- | --- |
-| Femi | [@FemiDev10](https://github.com/FemiDev10) | Admin dashboard, and brought the dashboard and phone app together into one live, synced system |
+| Femi | [@FemiDev10](https://github.com/FemiDev10) | Admin dashboard, combined both into one system |
 | Aysegul Sumeyra Kanca | [@sumeyramr](https://github.com/sumeyramr) | Admin dashboard |
 | Yuki | [@Yukidrew65](https://github.com/Yukidrew65) | Phone app |
-| Stephanie | GitHub to come | Phone app, plus the product and technical requirements (PRD and TRD) |
+| Stephanie | GitHub to come | Phone app |
 
 ## Contributing
 
