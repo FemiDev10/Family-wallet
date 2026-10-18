@@ -8,6 +8,19 @@ Family wallet was built in a Claude Code session, with Claude as a pair programm
 - Our team's **PRD and TRD** (product and technical requirements), pasted in full
 - Four screenshots of **dashboards we liked**, as visual inspiration: dark, card-based layouts with big numbers, sparklines and status pills
 
+### The brief
+
+<img src="docs/references/challenge-7-brief.webp" alt="Photo of the Challenge 7 brief: One wallet, many AI helpers" width="600">
+
+### The dashboards we showed Claude for inspiration
+
+These are other designers' work, shared only as mood references. None of their code or assets is used in this project.
+
+| | |
+| --- | --- |
+| <img src="docs/references/inspiration-1-ridgeline-left.webp" alt="Ridgeline dashboard, left half: dark sidebar and score cards" width="300"> | <img src="docs/references/inspiration-2-ridgeline-right.webp" alt="Ridgeline dashboard, right half: cards and a traffic line chart" width="300"> |
+| <img src="docs/references/inspiration-3-team-dashboard.webp" alt="Light team productivity dashboard with stat tiles, a table and a donut chart" width="300"> | <img src="docs/references/inspiration-4-cloudguard.jpg" alt="CloudGuard dark server dashboard with orange accents" width="300"> |
+
 ## The prompts
 
 ### 1. The admin dashboard
@@ -55,6 +68,10 @@ Family wallet was built in a Claude Code session, with Claude as a pair programm
 ### 8. Request a new agent, and explain the limits
 
 > Let David request a new agent from the phone. Also explain this spend limit stuff to me in a real-life scenario.
+
+With it, a screenshot of the limits panel we were asking about:
+
+<img src="docs/references/prompt-8-limits-panel.png" alt="The Code Helper limits panel: max per payment, max per day and allowed sellers" width="360">
 
 **Result:** "Ask for a new agent" on the phone, with Approve, Change limits first and Decline on the dashboard. Claude also explained the limits using Code Helper's day.
 
