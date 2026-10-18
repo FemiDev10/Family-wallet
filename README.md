@@ -73,6 +73,10 @@ Built together by four people at the ProductTank buildathon:
 | Yuki | [@Yukidrew65](https://github.com/Yukidrew65) | Phone app |
 | Stephanie | [@stephm](https://github.com/stephm) | Phone app |
 
+## How we built it
+
+We built this with Claude as a pair programmer. [PROMPTS.md](PROMPTS.md) lists every prompt we used, in order, and what each produced.
+
 ## Contributing
 
 We'd love help. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to pick something up.
