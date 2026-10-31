@@ -75,7 +75,7 @@ Built together by four people at the ProductTank buildathon:
 
 ## How we built it
 
-We built this with Claude as a pair programmer. [PROMPTS.md](PROMPTS.md) lists every prompt we used, in order, and what each produced.
+We built this with Claude as a pair programmer. [PROMPTS.md](PROMPTS.md) lists every prompt we used, in order, and what each produced. For the full story (the brief, our PRD/TRD, architecture, timeline, bugs fixed and next steps), see [docs/PROJECT-CONTEXT.md](docs/PROJECT-CONTEXT.md).
 
 ## Contributing
 
