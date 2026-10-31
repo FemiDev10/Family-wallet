@@ -26,7 +26,7 @@ Last updated: 31 October 2026.
 | Prompts used to build it | [PROMPTS.md](../PROMPTS.md) | With the brief and the reference images |
 | Hosted side-by-side demo | https://claude.ai/artifact/RHSMrpBqYeASrrSiYuoncv | A claude.ai artifact on Femi's account. Private until shared from its Share menu |
 | Earlier dashboard-only version | https://claude.ai/artifact/8t62YNTanojQDEowubCFN4 | Superseded by the demo above |
-| ProductTank write-up | https://claude.ai/code/artifact/6110cd01-1887-4e1f-ae0d-04fc11015608 | A claude.ai doc on Femi's account |
+| ProductTank write-up | [docs/PRODUCTTANK-WRITEUP.md](PRODUCTTANK-WRITEUP.md) | Full copy in the repo. The original is a claude.ai doc on Femi's account: https://claude.ai/code/artifact/6110cd01-1887-4e1f-ae0d-04fc11015608 |
 | Teammates' original phone prototype | https://claude.ai/artifact/C2hyqmskWtU9ohMHQEwNmb | Made by the phone-app teammates. Its palette and fonts were adopted for both screens |
 
 ---
@@ -180,8 +180,10 @@ The dashboard on the left and the phone in a phone frame on the right, a five-st
 | `server.js` | The sync server and static file server. Node, no dependencies |
 | `PROMPTS.md` | The prompts used to build it |
 | `docs/references/` | The brief photo, the inspiration screenshots, and the limits-panel screenshot |
+| `docs/PRODUCTTANK-WRITEUP.md` | The ProductTank write-up |
+| `tools/build.py` | Regenerates `dashboard.html` and `index.html` from their sources |
 
-**Important:** when you change `control-centre.html` or `demo.html`, regenerate `dashboard.html` or `index.html`. The wrapper inserts `<!doctype html>`, `<html lang="en"><head><meta charset="utf-8"><meta name="viewport" …>`, moves everything up to the end of the first `</style>` into `<head>`, and puts the rest in `<body>`.
+**Important:** when you change `control-centre.html` or `demo.html`, run `python3 tools/build.py` to regenerate `dashboard.html` and `index.html`. The wrapper inserts `<!doctype html>`, `<html lang="en"><head><meta charset="utf-8"><meta name="viewport" …>`, moves everything up to the end of the first `</style>` into `<head>`, and puts the rest in `<body>`.
 
 ### Shared state
 
